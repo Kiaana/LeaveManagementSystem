@@ -115,29 +115,56 @@ const Home = () => {
               <FaSpinner className="animate-spin text-gray-500 text-3xl" />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white rounded shadow">
-                <thead>
+            <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="py-2 px-4 border-b">姓名</th>
-                    <th className="py-2 px-4 border-b">请假类型</th>
-                    <th className="py-2 px-4 border-b">起始时间</th>
-                    <th className="py-2 px-4 border-b">预计返回时间</th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      姓名
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      请假类型
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      起始时间
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      预计返回时间
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white divide-y divide-gray-200">
                   {recentLeaves.map((leave) => (
-                    <tr key={leave.id}>
-                      <td className="py-2 px-4 border-b">{leave.name}</td>
-                      <td className="py-2 px-4 border-b">{leave.leave_type}</td>
-                      <td className="py-2 px-4 border-b">
+                    <tr key={leave.id} className="hover:bg-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leave.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leave.leave_type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(leave.start_time).toLocaleString()}
                       </td>
-                      <td className="py-2 px-4 border-b">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(leave.expected_return_time).toLocaleString()}
                       </td>
                     </tr>
                   ))}
+                  {recentLeaves.length === 0 && (
+                    <tr>
+                      <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        无最近请销假记录
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

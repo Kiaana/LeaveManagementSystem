@@ -232,55 +232,92 @@ const Overview = () => {
               <FaSpinner className="animate-spin text-gray-500 text-3xl" />
             </div>
           ) : (
-            <table className="min-w-full bg-white rounded shadow">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b">姓名</th>
-                  <th className="py-2 px-4 border-b">请假类型</th>
-                  <th className="py-2 px-4 border-b">去向</th>
-                  <th className="py-2 px-4 border-b">起始时间</th>
-                  <th className="py-2 px-4 border-b">预计返回时间</th>
-                  <th className="py-2 px-4 border-b">实际返回时间</th>
-                  <th className="py-2 px-4 border-b">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaves.length > 0 ? (
-                  leaves.map((leave) => (
-                    <tr key={leave.id}>
-                      <td className="py-2 px-4 border-b">{leave.name}</td>
-                      <td className="py-2 px-4 border-b">{leave.leave_type}</td>
-                      <td className="py-2 px-4 border-b">{leave.destination}</td>
-                      <td className="py-2 px-4 border-b">
-                        {new Date(leave.start_time).toLocaleString()}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        {new Date(leave.expected_return_time).toLocaleString()}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        {leave.actual_return_time
-                          ? new Date(leave.actual_return_time).toLocaleString()
-                          : '未销假'}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        <Link href={`/edit/${leave.id}`} legacyBehavior>
-                          <a className="flex items-center text-blue-500 hover:underline">
-                            <FaEdit className="mr-1" />
-                            编辑
-                          </a>
-                        </Link>
+            <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      姓名
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      请假类型
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      去向
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      起始时间
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      预计返回时间
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      实际返回时间
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {leaves.length > 0 ? (
+                    leaves.map((leave, index) => (
+                      <tr key={leave.id} className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-gray-100`}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leave.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leave.leave_type}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leave.destination}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(leave.start_time).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(leave.expected_return_time).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {leave.actual_return_time
+                            ? new Date(leave.actual_return_time).toLocaleString()
+                            : '未销假'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-500">
+                          <Link href={`/edit/${leave.id}`} legacyBehavior>
+                            <a className="flex items-center hover:underline">
+                              <FaEdit className="mr-1" />
+                              编辑
+                            </a>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        无符合条件的记录
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center py-4">
-                      无符合条件的记录
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
