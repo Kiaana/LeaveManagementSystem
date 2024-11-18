@@ -5,14 +5,19 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
 import PageTransition from '../../components/PageTransition';
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaUser, FaClipboard, FaMapMarkerAlt, FaUserTie, FaCalendarAlt, FaHourglassEnd } from 'react-icons/fa';
+import FormField from '../../components/FormField'; // 引入 FormField 组件
+import Button from '../../components/Button'; // 引入 Button 组件
+import { motion } from 'framer-motion'; // 导入 motion
 
 const EditLeave = () => {
   const router = useRouter();
   const { id } = router.query;
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm();
+  const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+
+  const startTime = watch('start_time');
 
   useEffect(() => {
     if (id) {
@@ -55,107 +60,115 @@ const EditLeave = () => {
 
   return (
     <PageTransition>
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6 text-center">编辑请假信息</h1>
-        {fetching ? (
-          <div className="flex justify-center">
-            <FaSpinner className="animate-spin text-gray-500 text-3xl" />
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="max-w-lg mx-auto space-y-4">
-            {/* 姓名 */}
-            <div>
-              <label className="block mb-1 font-semibold">姓名</label>
-              <input
-                type="text"
-                {...register('name', { required: '姓名是必填项' })}
-                className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded p-2 bg-gray-100`}
-                placeholder="请输入您的姓名"
-                readOnly
-              />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-            </div>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container max-w-2xl mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow-lg p-6 md:p-8"
+          >
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">
+              编辑请假信息
+            </h1>
 
-            {/* 请假事由 */}
-            <div>
-              <label className="block mb-1 font-semibold">请假事由<span className="text-red-500">*</span></label>
-              <input
-                type="text"
-                {...register('leave_type', { required: '请假事由是必填项' })}
-                className={`w-full border ${errors.leave_type ? 'border-red-500' : 'border-gray-300'} rounded p-2`}
-                placeholder="例如：病假、见导师等"
-              />
-              {errors.leave_type && <p className="text-red-500 text-sm mt-1">{errors.leave_type.message}</p>}
-            </div>
+            {fetching ? (
+              <div className="flex justify-center">
+                <FaSpinner className="animate-spin text-gray-500 text-3xl" />
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* 姓名 */}
+                <FormField label="姓名" icon={FaUser} error={errors.name}>
+                  <input
+                    type="text"
+                    {...register('name', { required: '姓名是必填项' })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.name ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2 bg-gray-100`}
+                    placeholder="请输入您的姓名"
+                    readOnly
+                  />
+                </FormField>
 
-            {/* 请假去向 */}
-            <div>
-              <label className="block mb-1 font-semibold">请假去向<span className="text-red-500">*</span></label>
-              <input
-                type="text"
-                {...register('destination', { required: '请假去向是必填项' })}
-                className={`w-full border ${errors.destination ? 'border-red-500' : 'border-gray-300'} rounded p-2`}
-                placeholder="例如：医院、学院等"
-              />
-              {errors.destination && <p className="text-red-500 text-sm mt-1">{errors.destination.message}</p>}
-            </div>
+                {/* 请假事由 */}
+                <FormField label="请假事由" icon={FaClipboard} error={errors.leave_type}>
+                  <input
+                    type="text"
+                    {...register('leave_type', { required: '请假事由是必填项' })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.leave_type ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2`}
+                    placeholder="例如：病假、见导师等"
+                  />
+                </FormField>
 
-            {/* 批假人 */}
-            <div>
-              <label className="block mb-1 font-semibold">批假人<span className="text-red-500">*</span></label>
-              <input
-                type="text"
-                {...register('approver', { required: '批假人是必填项' })}
-                className={`w-full border ${errors.approver ? 'border-red-500' : 'border-gray-300'} rounded p-2`}
-                placeholder="请输入审批人员的姓名"
-              />
-              {errors.approver && <p className="text-red-500 text-sm mt-1">{errors.approver.message}</p>}
-            </div>
+                {/* 请假去向 */}
+                <FormField label="请假去向" icon={FaMapMarkerAlt} error={errors.destination}>
+                  <input
+                    type="text"
+                    {...register('destination', { required: '请假去向是必填项' })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.destination ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2`}
+                    placeholder="例如：医院、学院等"
+                  />
+                </FormField>
 
-            {/* 出发时间 */}
-            <div>
-              <label className="block mb-1 font-semibold">出发时间<span className="text-red-500">*</span></label>
-              <input
-                type="datetime-local"
-                {...register('start_time', { required: '出发时间是必填项' })}
-                className={`w-full border ${errors.start_time ? 'border-red-500' : 'border-gray-300'} rounded p-2`}
-              />
-              {errors.start_time && <p className="text-red-500 text-sm mt-1">{errors.start_time.message}</p>}
-            </div>
+                {/* 批假人 */}
+                <FormField label="批假人" icon={FaUserTie} error={errors.approver}>
+                  <input
+                    type="text"
+                    {...register('approver', { required: '批假人是必填项' })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.approver ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2`}
+                    placeholder="请输入审批人员的姓名"
+                  />
+                </FormField>
 
-            {/* 请假预计返回时间 */}
-            <div>
-              <label className="block mb-1 font-semibold">请假预计返回时间<span className="text-red-500">*</span></label>
-              <input
-                type="datetime-local"
-                {...register('expected_return_time', { required: '预计返回时间是必填项' })}
-                className={`w-full border ${errors.expected_return_time ? 'border-red-500' : 'border-gray-300'} rounded p-2`}
-              />
-              {errors.expected_return_time && <p className="text-red-500 text-sm mt-1">{errors.expected_return_time.message}</p>}
-            </div>
+                {/* 出发时间 */}
+                <FormField label="出发时间" icon={FaCalendarAlt} error={errors.start_time}>
+                  <input
+                    type="datetime-local"
+                    {...register('start_time', { required: '出发时间是必填项' })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.start_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2`}
+                  />
+                </FormField>
 
-            {/* 提交按钮 */}
-            <div className="flex space-x-4">
-              <button
-                type="submit"
-                className={`flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition ${
-                  loading ? 'cursor-not-allowed opacity-50' : ''
-                }`}
-                disabled={loading}
-              >
-                {loading ? <FaSpinner className="animate-spin mr-2" /> : null}
-                更新
-              </button>
-              <button
-                type="button"
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition"
-                onClick={() => router.back()}
-              >
-                取消
-              </button>
-            </div>
-          </form>
-        )}
+                {/* 请假预计返回时间 */}
+                <FormField label="预计返回时间" icon={FaHourglassEnd} error={errors.expected_return_time}>
+                  <input
+                    type="datetime-local"
+                    {...register('expected_return_time', { 
+                      required: '预计返回时间是必填项',
+                      validate: value => !startTime || new Date(value) > new Date(startTime) || '返回时间必须晚于出发时间'
+                    })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.expected_return_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2`}
+                  />
+                </FormField>
+
+                {/* 提交按钮 */}
+                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
+                  <Button type="submit" disabled={loading} variant="primary">
+                    {loading ? (
+                      <>
+                        <FaSpinner className="animate-spin mr-2" />
+                        更新中...
+                      </>
+                    ) : '更新信息'}
+                  </Button>
+                  <Button type="button" onClick={() => router.back()} variant="secondary">
+                    取消
+                  </Button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        </div>
       </div>
     </PageTransition>
   );

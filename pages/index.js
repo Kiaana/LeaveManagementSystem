@@ -2,9 +2,30 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
-import { FaSpinner, FaUserClock, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaSpinner, FaUserClock, FaCheckCircle, FaExclamationCircle, FaHistory } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import DataTable from '../components/DataTable';
+import Card from '../components/Card'; // 引入 Card 组件
+
+const StatCard = ({ icon: Icon, title, value, loading, bgColor, iconColor, href }) => (
+  <Link href={href} legacyBehavior>
+    <motion.a 
+      className={`${bgColor} p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center cursor-pointer`}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <Icon className={`${iconColor} text-4xl mb-4`} />
+      <h2 className="text-lg md:text-xl font-semibold text-center">{title}</h2>
+      {loading ? (
+        <FaSpinner className={`animate-spin ${iconColor} text-3xl mt-2`} />
+      ) : (
+        <p className="text-3xl md:text-4xl font-bold mt-2">{value}</p>
+      )}
+    </motion.a>
+  </Link>
+);
 
 const Home = () => {
   const [statistics, setStatistics] = useState({});
@@ -46,7 +67,7 @@ const Home = () => {
     }
   };
 
-  // Helper function to build query parameters based on statistic type
+  // 根据统计类型构建查询参数
   const buildFilterParams = (type) => {
     switch (type) {
       case 'current_leave':
@@ -59,116 +80,73 @@ const Home = () => {
         return {};
     }
   };
+  
+  // 定义最近请销假记录的表格列
+  const columns = [
+    { header: '姓名', accessor: 'name' },
+    { header: '请假类型', accessor: 'leave_type', hideOnMobile: true },
+    { header: '起始时间', accessor: 'start_time', render: (value) => new Date(value).toLocaleDateString() },
+    { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: true, render: (value) => new Date(value).toLocaleDateString() },
+  ];
 
   return (
     <PageTransition>
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6 text-center">欢迎使用请销假管理系统</h1>
+      <div className="container mx-auto px-4 py-6">
+        <motion.h1 
+          className="text-2xl md:text-3xl font-bold mb-8 text-center text-gray-800"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          请销假管理系统
+        </motion.h1>
 
-        {/* 统计信息 */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          {/* 当前请假人数 */}
-          <Link href={{ pathname: '/overview', query: buildFilterParams('current_leave') }} legacyBehavior>
-            <a className="bg-blue-100 p-6 rounded shadow hover:bg-blue-200 transition flex flex-col items-center">
-              <FaUserClock className="text-blue-500 text-4xl mb-4" />
-              <h2 className="text-xl font-semibold">当前请假人数</h2>
-              {loadingStats ? (
-                <FaSpinner className="animate-spin text-blue-500 text-3xl mt-2" />
-              ) : (
-                <p className="text-4xl font-bold">{statistics.current_leave || 0}</p>
-              )}
-            </a>
-          </Link>
+        {/* 统一的内容容器 */}
+        <div className="max-w-4xl mx-auto">
+          {/* StatCards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <StatCard
+              icon={FaUserClock}
+              title="当前请假人数"
+              value={statistics.current_leave || 0}
+              loading={loadingStats}
+              bgColor="bg-blue-50"
+              iconColor="text-blue-500"
+              href={{ pathname: '/overview', query: buildFilterParams('current_leave') }}
+            />
+            <StatCard
+              icon={FaCheckCircle}
+              title="已销假人数"
+              value={statistics.cancelled_leaves || 0}
+              loading={loadingStats}
+              bgColor="bg-green-50"
+              iconColor="text-green-500"
+              href={{ pathname: '/overview', query: buildFilterParams('cancelled_leaves') }}
+            />
+            <StatCard
+              icon={FaExclamationCircle}
+              title="超假人数"
+              value={statistics.over_leave || 0}
+              loading={loadingStats}
+              bgColor="bg-red-50"
+              iconColor="text-red-500"
+              href={{ pathname: '/overview', query: buildFilterParams('over_leave') }}
+            />
+          </div>
 
-          {/* 已销假人数 */}
-          <Link href={{ pathname: '/overview', query: buildFilterParams('cancelled_leaves') }} legacyBehavior>
-            <a className="bg-green-100 p-6 rounded shadow hover:bg-green-200 transition flex flex-col items-center">
-              <FaCheckCircle className="text-green-500 text-4xl mb-4" />
-              <h2 className="text-xl font-semibold">已销假人数</h2>
-              {loadingStats ? (
-                <FaSpinner className="animate-spin text-green-500 text-3xl mt-2" />
-              ) : (
-                <p className="text-4xl font-bold">{statistics.cancelled_leaves || 0}</p>
-              )}
-            </a>
-          </Link>
-
-          {/* 超假人数 */}
-          <Link href={{ pathname: '/overview', query: buildFilterParams('over_leave') }} legacyBehavior>
-            <a className="bg-red-100 p-6 rounded shadow hover:bg-red-200 transition flex flex-col items-center">
-              <FaExclamationCircle className="text-red-500 text-4xl mb-4" />
-              <h2 className="text-xl font-semibold">超假人数</h2>
-              {loadingStats ? (
-                <FaSpinner className="animate-spin text-red-500 text-3xl mt-2" />
-              ) : (
-                <p className="text-4xl font-bold">{statistics.over_leave || 0}</p>
-              )}
-            </a>
-          </Link>
-        </div>
-
-        {/* 最近请销假记录 */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4">最近请销假记录</h2>
-          {loadingLeaves ? (
-            <div className="flex justify-center">
-              <FaSpinner className="animate-spin text-gray-500 text-3xl" />
+          {/* 表格卡片 */}
+          <Card>
+            <div className="flex items-center mb-6">
+              <FaHistory className="text-gray-500 text-xl mr-2" />
+              <h2 className="text-xl font-bold text-gray-800">最近请销假记录</h2>
             </div>
-          ) : (
-            <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      姓名
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      请假类型
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      起始时间
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      预计返回时间
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {recentLeaves.map((leave) => (
-                    <tr key={leave.id} className="hover:bg-gray-100">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leave.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leave.leave_type}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(leave.start_time).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(leave.expected_return_time).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                  {recentLeaves.length === 0 && (
-                    <tr>
-                      <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        无最近请销假记录
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+            <DataTable
+              columns={columns}
+              data={recentLeaves}
+              loading={loadingLeaves}
+              emptyMessage="暂无请销假记录"
+            />
+          </Card>
         </div>
       </div>
     </PageTransition>
