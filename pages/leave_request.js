@@ -1,6 +1,6 @@
 // pages/leave_request.js
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosConfig';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import PageTransition from '../components/PageTransition';
@@ -13,7 +13,7 @@ const LeaveRequest = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      await axios.post('http://127.0.0.1:5000/api/leave_requests', data);
+      await axiosInstance.post('/leave_requests', data);
       toast.success('请假申请提交成功');
       reset();
     } catch (error) {

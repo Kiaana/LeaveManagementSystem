@@ -1,6 +1,6 @@
 // pages/index.js
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
 import { FaSpinner } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -18,7 +18,7 @@ const Home = () => {
 
   const fetchStatistics = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:5000/api/statistics');
+      const res = await axiosInstance.get('/statistics');
       setStatistics(res.data);
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -30,7 +30,7 @@ const Home = () => {
 
   const fetchRecentLeaves = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:5000/api/leave_requests', {
+      const res = await axiosInstance.get('/leave_requests', {
         params: {
           limit: 5,
           order: 'desc',

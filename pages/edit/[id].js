@@ -1,6 +1,6 @@
 // pages/edit/[id].js
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../../services/axiosConfig';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
@@ -23,7 +23,7 @@ const EditLeave = () => {
 
   const fetchLeave = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/leave_requests/${id}`);
+      const res = await axiosInstance.get(`/leave_requests/${id}`);
       const data = res.data;
       setValue('name', data.name);
       setValue('leave_type', data.leave_type);
@@ -42,7 +42,7 @@ const EditLeave = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      await axios.put(`http://127.0.0.1:5000/api/leave_requests/${id}`, data);
+      await axiosInstance.put(`/leave_requests/${id}`, data);
       toast.success('请假信息更新成功');
       router.push('/overview');
     } catch (error) {

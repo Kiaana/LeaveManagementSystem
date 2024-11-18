@@ -1,6 +1,6 @@
 // pages/cancel_leave.js
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosConfig';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import PageTransition from '../components/PageTransition';
@@ -13,7 +13,7 @@ const CancelLeave = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      await axios.post('http://127.0.0.1:5000/api/cancel_leave', data);
+      await axiosInstance.post('/cancel_leave', data);
       toast.success('销假申请提交成功');
       reset();
     } catch (error) {

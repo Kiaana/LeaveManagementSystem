@@ -55,25 +55,25 @@ const Navbar = () => {
             {isOpen && (
                 <div className="md:hidden bg-gray-800">
                     <Link href="/" passHref>
-                        <div className="block text-white hover:bg-gray-700 px-4 py-2 flex items-center cursor-pointer">
+                        <div className="block text-white hover:bg-gray-700 px-4 py-2 items-center cursor-pointer">
                             <FaHome className="mr-2" />
                             首页
                         </div>
                     </Link>
                     <Link href="/leave_request" passHref>
-                        <div className="block text-white hover:bg-gray-700 px-4 py-2 flex items-center cursor-pointer">
+                        <div className="block text-white hover:bg-gray-700 px-4 py-2 items-center cursor-pointer">
                             <FaCalendarAlt className="mr-2" />
                             请假申请
                         </div>
                     </Link>
                     <Link href="/cancel_leave" passHref>
-                        <div className="block text-white hover:bg-gray-700 px-4 py-2 flex items-center cursor-pointer">
+                        <div className="block text-white hover:bg-gray-700 px-4 py-2 items-center cursor-pointer">
                             <FaSignOutAlt className="mr-2" />
                             销假申请
                         </div>
                     </Link>
                     <Link href="/overview" passHref>
-                        <div className="block text-white hover:bg-gray-700 px-4 py-2 flex items-center cursor-pointer">
+                        <div className="block text-white hover:bg-gray-700 px-4 py-2 items-center cursor-pointer">
                             <FaClipboardList className="mr-2" />
                             信息总览
                         </div>

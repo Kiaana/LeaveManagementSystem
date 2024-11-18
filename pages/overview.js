@@ -1,6 +1,6 @@
 // pages/overview.js
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
 import { FaSpinner, FaDownload, FaEdit } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -20,7 +20,7 @@ const Overview = () => {
   const fetchLeaves = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://127.0.0.1:5000/api/leave_requests', {
+      const res = await axiosInstance.get('/leave_requests', {
         params: filters,
       });
       setLeaves(res.data);
@@ -51,7 +51,7 @@ const Overview = () => {
 
   const handleExport = () => {
     const params = new URLSearchParams(filters).toString();
-    window.open(`http://127.0.0.1:5000/api/export?${params}`, '_blank');
+    window.open(`${process.env.NEXT_PUBLIC_API_URL}/export?${params}`, '_blank');
     toast.info('正在导出数据...');
   };
 
