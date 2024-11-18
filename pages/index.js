@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaUserClock, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 
 const Home = () => {
   const [statistics, setStatistics] = useState({});
@@ -45,6 +46,20 @@ const Home = () => {
     }
   };
 
+  // Helper function to build query parameters based on statistic type
+  const buildFilterParams = (type) => {
+    switch (type) {
+      case 'current_leave':
+        return { is_cancelled: 'false' };
+      case 'cancelled_leaves':
+        return { is_cancelled: 'true' };
+      case 'over_leave':
+        return { is_overdue: 'true' };
+      default:
+        return {};
+    }
+  };
+
   return (
     <PageTransition>
       <div className="container mx-auto p-4">
@@ -52,30 +67,44 @@ const Home = () => {
 
         {/* 统计信息 */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="bg-blue-100 p-6 rounded shadow flex flex-col items-center">
-            <h2 className="text-xl mb-2">当前请假人数</h2>
-            {loadingStats ? (
-              <FaSpinner className="animate-spin text-blue-500 text-3xl" />
-            ) : (
-              <p className="text-4xl font-bold">{statistics.current_leave || 0}</p>
-            )}
-          </div>
-          <div className="bg-green-100 p-6 rounded shadow flex flex-col items-center">
-            <h2 className="text-xl mb-2">已销假人数</h2>
-            {loadingStats ? (
-              <FaSpinner className="animate-spin text-green-500 text-3xl" />
-            ) : (
-              <p className="text-4xl font-bold">{statistics.cancelled_leaves || 0}</p>
-            )}
-          </div>
-          <div className="bg-red-100 p-6 rounded shadow flex flex-col items-center">
-            <h2 className="text-xl mb-2">超假人数</h2>
-            {loadingStats ? (
-              <FaSpinner className="animate-spin text-red-500 text-3xl" />
-            ) : (
-              <p className="text-4xl font-bold">{statistics.over_leave || 0}</p>
-            )}
-          </div>
+          {/* 当前请假人数 */}
+          <Link href={{ pathname: '/overview', query: buildFilterParams('current_leave') }} legacyBehavior>
+            <a className="bg-blue-100 p-6 rounded shadow hover:bg-blue-200 transition flex flex-col items-center">
+              <FaUserClock className="text-blue-500 text-4xl mb-4" />
+              <h2 className="text-xl font-semibold">当前请假人数</h2>
+              {loadingStats ? (
+                <FaSpinner className="animate-spin text-blue-500 text-3xl mt-2" />
+              ) : (
+                <p className="text-4xl font-bold">{statistics.current_leave || 0}</p>
+              )}
+            </a>
+          </Link>
+
+          {/* 已销假人数 */}
+          <Link href={{ pathname: '/overview', query: buildFilterParams('cancelled_leaves') }} legacyBehavior>
+            <a className="bg-green-100 p-6 rounded shadow hover:bg-green-200 transition flex flex-col items-center">
+              <FaCheckCircle className="text-green-500 text-4xl mb-4" />
+              <h2 className="text-xl font-semibold">已销假人数</h2>
+              {loadingStats ? (
+                <FaSpinner className="animate-spin text-green-500 text-3xl mt-2" />
+              ) : (
+                <p className="text-4xl font-bold">{statistics.cancelled_leaves || 0}</p>
+              )}
+            </a>
+          </Link>
+
+          {/* 超假人数 */}
+          <Link href={{ pathname: '/overview', query: buildFilterParams('over_leave') }} legacyBehavior>
+            <a className="bg-red-100 p-6 rounded shadow hover:bg-red-200 transition flex flex-col items-center">
+              <FaExclamationCircle className="text-red-500 text-4xl mb-4" />
+              <h2 className="text-xl font-semibold">超假人数</h2>
+              {loadingStats ? (
+                <FaSpinner className="animate-spin text-red-500 text-3xl mt-2" />
+              ) : (
+                <p className="text-4xl font-bold">{statistics.over_leave || 0}</p>
+              )}
+            </a>
+          </Link>
         </div>
 
         {/* 最近请销假记录 */}

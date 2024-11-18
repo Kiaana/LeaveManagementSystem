@@ -5,8 +5,11 @@ import PageTransition from '../components/PageTransition';
 import { FaSpinner, FaDownload, FaEdit } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 const Overview = () => {
+  const router = useRouter();
+  const { query } = router;
   const [leaves, setLeaves] = useState([]);
   const [filters, setFilters] = useState({
     name: '',
@@ -14,14 +17,44 @@ const Overview = () => {
     destination: '',
     start_date: '',
     end_date: '',
+    is_cancelled: '',
+    is_overdue: '',
   });
   const [loading, setLoading] = useState(false);
 
-  const fetchLeaves = async () => {
+  // Function to apply initial filters from URL query parameters
+  useEffect(() => {
+    if (query) {
+      const initialFilters = { ...filters };
+
+      // Parse and set query parameters to filters
+      if (query.name) initialFilters.name = query.name;
+      if (query.leave_type) initialFilters.leave_type = query.leave_type;
+      if (query.destination) initialFilters.destination = query.destination;
+      if (query.start_date) initialFilters.start_date = query.start_date;
+      if (query.end_date) initialFilters.end_date = query.end_date;
+      if (query.is_cancelled) initialFilters.is_cancelled = query.is_cancelled;
+      if (query.is_overdue) initialFilters.is_overdue = query.is_overdue;
+
+      setFilters(initialFilters);
+      fetchLeaves(initialFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  const fetchLeaves = async (currentFilters = filters) => {
     setLoading(true);
     try {
+      // Remove empty filters
+      const params = {};
+      Object.keys(currentFilters).forEach((key) => {
+        if (currentFilters[key] !== '') {
+          params[key] = currentFilters[key];
+        }
+      });
+
       const res = await axiosInstance.get('/leave_requests', {
-        params: filters,
+        params,
       });
       setLeaves(res.data);
     } catch (error) {
@@ -32,11 +65,6 @@ const Overview = () => {
     }
   };
 
-  useEffect(() => {
-    fetchLeaves();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleChange = (e) => {
     setFilters({
       ...filters,
@@ -46,11 +74,22 @@ const Overview = () => {
 
   const handleFilter = (e) => {
     e.preventDefault();
+    // Update the URL with current filters
+    router.push({
+      pathname: '/overview',
+      query: {
+        ...filters,
+      },
+    });
     fetchLeaves();
   };
 
   const handleExport = () => {
-    const params = new URLSearchParams(filters).toString();
+    const params = new URLSearchParams(
+      Object.entries(filters)
+        .filter(([key, value]) => value !== '')
+        .map(([key, value]) => [key, value])
+    ).toString();
     window.open(`${process.env.NEXT_PUBLIC_API_URL}/export?${params}`, '_blank');
     toast.info('正在导出数据...');
   };
@@ -122,6 +161,34 @@ const Overview = () => {
                 className="w-full border border-gray-300 rounded p-2"
               />
             </div>
+            {/* 已销假 */}
+            <div>
+              <label className="block mb-1 font-semibold">已销假</label>
+              <select
+                name="is_cancelled"
+                value={filters.is_cancelled}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2"
+              >
+                <option value="">全部</option>
+                <option value="true">已销假</option>
+                <option value="false">未销假</option>
+              </select>
+            </div>
+            {/* 超假 */}
+            <div>
+              <label className="block mb-1 font-semibold">超假</label>
+              <select
+                name="is_overdue"
+                value={filters.is_overdue}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2"
+              >
+                <option value="">全部</option>
+                <option value="true">超假</option>
+                <option value="false">未超假</option>
+              </select>
+            </div>
           </div>
           {/* 按钮 */}
           <div className="flex justify-end mt-4 space-x-4">
@@ -133,11 +200,27 @@ const Overview = () => {
             </button>
             <button
               type="button"
-              onClick={handleExport}
-              className="flex items-center bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+              onClick={() => {
+                // Reset filters and update URL
+                const resetFilters = {
+                  name: '',
+                  leave_type: '',
+                  destination: '',
+                  start_date: '',
+                  end_date: '',
+                  is_cancelled: '',
+                  is_overdue: '',
+                };
+                setFilters(resetFilters);
+                router.push({
+                  pathname: '/overview',
+                  query: {},
+                });
+                fetchLeaves(resetFilters);
+              }}
+              className="flex items-center bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition"
             >
-              <FaDownload className="mr-2" />
-              导出数据
+              重置
             </button>
           </div>
         </form>

@@ -12,7 +12,7 @@ function MyApp({ Component, pageProps, router }) {
       <AnimatePresence mode="wait">
         <Component {...pageProps} key={router.route} />
       </AnimatePresence>
-      <ToastContainer />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </>
   );
 }
