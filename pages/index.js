@@ -83,14 +83,28 @@ const Home = () => {
   
     // 定义日期格式化函数
     const formatDate = (value) => {
+      if (!value) return '-';
+    
+      // 解析为 UTC 时间
+      const utcDate = new Date(value);
+    
+      // 获取本地时区的偏移量（以分钟为单位）
+      const timeZoneOffset = utcDate.getTimezoneOffset() * 60000; // 转为毫秒
+    
+      // 转换为本地时间
+      const localDate = new Date(utcDate.getTime() - timeZoneOffset);
+    
+      // 格式化为东八区时间
       const options = {
+        // year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
+        // second: '2-digit',
         hour12: false,
       };
-      return new Date(value).toLocaleString('zh-CN', options).replace(',', '');
+      return new Intl.DateTimeFormat('zh-CN', options).format(localDate);
     };
 
   // 定义最近请销假记录的表格列

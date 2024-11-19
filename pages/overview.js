@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
-import { FaSpinner, FaDownload, FaEdit } from 'react-icons/fa';
+import { FaDownload, FaEdit } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -29,8 +29,7 @@ const Overview = () => {
   useEffect(() => {
     if (query) {
       const initialFilters = { ...filters };
-
-      // 将查询参数设置到筛选条件中
+      // 将URL中的查询参数解析并设置到筛选条件中
       Object.keys(query).forEach((key) => {
         if (initialFilters.hasOwnProperty(key)) {
           initialFilters[key] = query[key];
@@ -40,7 +39,6 @@ const Overview = () => {
       setFilters(initialFilters);
       fetchLeaves(initialFilters);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   // 获取请销假数据
@@ -109,23 +107,62 @@ const Overview = () => {
 
   // 导出数据
   const handleExport = () => {
-    const params = new URLSearchParams(
-      Object.entries(filters)
-        .filter(([_, value]) => value !== '')
-        .map(([key, value]) => [key, value])
-    ).toString();
-    window.open(`${process.env.NEXT_PUBLIC_API_URL}/export?${params}`, '_blank');
-    toast.info('正在导出数据...');
+    if (leaves.length === 0) {
+      toast.error('没有数据可导出');
+      return;
+    }
+
+    const headers = ['姓名', '请假类型', '去向', '起始时间', '预计返回时间', '实际返回时间'];
+    const rows = leaves.map((leave) => [
+      leave.name,
+      leave.leave_type || '未提供',
+      leave.destination || '未提供',
+      formatDate(leave.start_time),
+      formatDate(leave.expected_return_time),
+      leave.actual_return_time ? formatDate(leave.actual_return_time) : '未销假',
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '请销假记录.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast.success('导出成功！');
   };
 
-  // 定义表格的列
+  // 本地时间格式化函数
+  const formatDate = (value) => {
+    if (!value) return '未提供时间';
+    const utcDate = new Date(value);
+    const timeZoneOffset = utcDate.getTimezoneOffset() * 60000; // 转换为毫秒
+    const localDate = new Date(utcDate.getTime() - timeZoneOffset);
+
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      // second: '2-digit',
+      hour12: false,
+    };
+    return new Intl.DateTimeFormat('zh-CN', options).format(localDate);
+  };
+
+  // 更新表格列定义
   const columns = [
     { header: '姓名', accessor: 'name' },
     { header: '请假类型', accessor: 'leave_type', hideOnMobile: true },
     { header: '去向', accessor: 'destination' },
-    { header: '起始时间', accessor: 'start_time', render: (value) => new Date(value).toLocaleString() },
-    { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: true, render: (value) => new Date(value).toLocaleString() },
-    { header: '实际返回时间', accessor: 'actual_return_time', render: (value) => (value ? new Date(value).toLocaleString() : '未销假') },
+    { header: '起始时间', accessor: 'start_time', render: (value) => formatDate(value) },
+    { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: true, render: (value) => formatDate(value) },
+    { header: '实际返回时间', accessor: 'actual_return_time', render: (value) => (value ? formatDate(value) : '未销假') },
     {
       header: '操作',
       accessor: 'actions',
