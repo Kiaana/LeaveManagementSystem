@@ -16,22 +16,18 @@ import {
 import { motion } from 'framer-motion';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
+import useUsers from '../hooks/useUsers'; // 引入自定义 Hook
 
 const LeaveRequest = () => {
   const { register, handleSubmit, formState: { errors }, reset, watch, setError, clearErrors } = useForm();
   const [loading, setLoading] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [users, setUsers] = useState([]);
+  const { users, loadingUsers } = useUsers(); // 使用自定义 Hook
   const [userId, setUserId] = useState(null);
   const [nameValidated, setNameValidated] = useState(false);
 
   const name = watch('name');
   const startTime = watch('start_time');
   const expectedReturnTime = watch('expected_return_time');
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   useEffect(() => {
     if (name && users.length > 0) {
@@ -44,18 +40,6 @@ const LeaveRequest = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, users]);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await axiosInstance.get('/users');
-      setUsers(res.data.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('无法获取用户列表，请稍后再试。');
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
-
   const validateUserName = (enteredName) => {
     const matchedUser = users.find(user => user.name === enteredName.trim());
     if (matchedUser) {
@@ -67,8 +51,6 @@ const LeaveRequest = () => {
       setUserId(null);
       setNameValidated(false);
       setError('name', { type: 'manual', message: '该姓名未在系统中注册' });
-      // Removed the following line to prevent incorrect error when name is not found
-      // setError('submit', { type: 'manual', message: '有未销假记录' });
     }
   };
 

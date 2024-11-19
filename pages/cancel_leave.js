@@ -8,21 +8,17 @@ import { FaSpinner, FaUser, FaCalendarAlt, FaClipboard } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
+import useUsers from '../hooks/useUsers'; // 引入自定义 Hook
 
 const CancelLeave = () => {
   const { register, handleSubmit, formState: { errors }, reset, watch, setError, clearErrors } = useForm();
   const [loading, setLoading] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [users, setUsers] = useState([]);
+  const { users, loadingUsers } = useUsers(); // 使用自定义 Hook
   const [userId, setUserId] = useState(null);
   const [pendingLeave, setPendingLeave] = useState(null);
 
   const name = watch('name');
   const actualReturnTime = watch('actual_return_time');
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   useEffect(() => {
     if (name && users.length > 0) {
@@ -34,18 +30,6 @@ const CancelLeave = () => {
     }
   }, [name, users]);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await axiosInstance.get('/users');
-      setUsers(res.data.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('无法获取用户列表，请稍后再试。');
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
-
   const validateUserName = (enteredName) => {
     const matchedUser = users.find(user => user.name === enteredName.trim());
     if (matchedUser) {
@@ -56,8 +40,6 @@ const CancelLeave = () => {
       setUserId(null);
       setPendingLeave(null);
       setError('name', { type: 'manual', message: '该姓名未在系统中注册' });
-      // 移除这行，因为用户名不存在时不应该显示未销假记录的错误
-      // setError('submit', { type: 'manual', message: '没有未销假记录' });
     }
   };
 
