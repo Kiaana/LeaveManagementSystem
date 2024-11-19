@@ -58,7 +58,26 @@ const Home = () => {
           order: 'desc',
         },
       });
-      setRecentLeaves(res.data);
+  
+      const processedData = res.data.map((leave) => {
+        const now = new Date(); // 当前本地时间
+        const nowUTC = new Date(now.toISOString()); // 转换为 UTC 时间
+  
+        const expectedReturnTime = new Date(leave.expected_return_time); // 服务端时间为 UTC
+        const actualReturnTime = leave.actual_return_time ? new Date(leave.actual_return_time) : null;
+  
+        let status = 'current'; // 默认状态为请假中
+  
+        if (actualReturnTime) {
+          status = 'cancelled'; // 已销假
+        } else if (expectedReturnTime < nowUTC) {
+          status = 'overdue'; // 超假
+        }
+  
+        return { ...leave, status }; // 添加 status 字段
+      });
+  
+      setRecentLeaves(processedData);
     } catch (error) {
       console.error('Error fetching recent leaves:', error);
       toast.error('获取最近请销假记录失败');

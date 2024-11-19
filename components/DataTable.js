@@ -12,6 +12,13 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
     );
   }
 
+  // 状态对应的背景颜色
+  const rowColors = {
+    current: 'bg-blue-50', // 请假中
+    cancelled: 'bg-green-50', // 已销假
+    overdue: 'bg-red-50', // 超假
+  };
+
   return (
     <div className="overflow-x-auto">
       <div className="inline-block min-w-full align-middle">
@@ -37,7 +44,9 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
                 data.map((row) => (
                   <motion.tr
                     key={row.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className={`hover:bg-gray-50 transition-colors ${
+                      rowColors[row.status] || ''
+                    }`} // 根据状态设置背景颜色
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     whileHover={{ backgroundColor: 'rgba(243, 244, 246, 0.4)' }}
