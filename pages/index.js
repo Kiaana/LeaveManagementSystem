@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import DataTable from '../components/DataTable';
 import Card from '../components/Card';
+import Pagination from '../components/Pagination';
 
 const StatCard = ({ icon: Icon, title, value, loading, bgColor, iconColor, href }) => (
   <Link href={href} legacyBehavior>
@@ -89,11 +90,15 @@ const Home = () => {
   
       const processedData = res.data.data.map((leave) => {
         const now = new Date();
-        const nowUTC = new Date(now.toISOString());
+        const nowLocal = new Date(now.toISOString());
+        // 使用本地时间计算UTC时间
+        const nowUTC = new Date(nowLocal.getTime() + nowLocal.getTimezoneOffset() * 60000);
+        // console.log('nowUTC:', nowUTC);
   
         const expectedReturnTime = new Date(leave.expected_return_time);
+        // console.log('expectedReturnTime:', expectedReturnTime);
         const actualReturnTime = leave.actual_return_time ? new Date(leave.actual_return_time) : null;
-  
+
         let status = 'current';
   
         if (actualReturnTime) {
@@ -126,9 +131,12 @@ const Home = () => {
       case 'current_leave':
         return { is_cancelled: 'false' };
       case 'today_cancelled':
-        // 假设后端支持根据日期筛选
         const today = new Date().toISOString().split('T')[0];
-        return { is_cancelled: 'true', start_date: today, end_date: today };
+        return { 
+          is_cancelled: 'true', 
+          start_date: today, 
+          end_date: today 
+        };
       case 'overdue_leave':
         return { is_overdue: 'true' };
       default:
@@ -161,43 +169,6 @@ const Home = () => {
     { header: '起始时间', accessor: 'start_time', render: formatDate },
     { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: false, render: formatDate },
   ];
-
-  // 定义分页组件
-  const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-    const handlePrevious = () => {
-      if (currentPage > 1) {
-        onPageChange(currentPage - 1);
-      }
-    };
-  
-    const handleNext = () => {
-      if (currentPage < totalPages) {
-        onPageChange(currentPage + 1);
-      }
-    };
-  
-    return (
-      <div className="flex justify-center items-center mt-6">
-        <button
-          onClick={handlePrevious}
-          disabled={currentPage === 1}
-          className="px-4 py-2 mx-1 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
-        >
-          上一页
-        </button>
-        <span className="mx-2 text-gray-600">
-          第 {currentPage} 页，共 {totalPages} 页
-        </span>
-        <button
-          onClick={handleNext}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 mx-1 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
-        >
-          下一页
-        </button>
-      </div>
-    );
-  };
 
   return (
     <PageTransition>

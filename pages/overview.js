@@ -8,12 +8,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import DataTable from '../components/DataTable';
 import FilterForm from '../components/FilterForm';
-import Card from '../components/Card'; // 引入 Card 组件
+import Card from '../components/Card';
+import Pagination from '../components/Pagination';
 
 const Overview = () => {
   const router = useRouter();
   const { query } = router;
   const [leaves, setLeaves] = useState([]);
+  const [users, setUsers] = useState([]);
   const [filters, setFilters] = useState({
     name: '',
     leave_type: '',
@@ -24,39 +26,73 @@ const Overview = () => {
     is_overdue: '',
   });
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  // 初始化时应用URL中的查询参数作为筛选条件
   useEffect(() => {
-    if (query) {
-      const initialFilters = { ...filters };
-      // 将URL中的查询参数解析并设置到筛选条件中
-      Object.keys(query).forEach((key) => {
-        if (initialFilters.hasOwnProperty(key)) {
-          initialFilters[key] = query[key];
-        }
-      });
+    fetchUsers();
+  }, []);
 
-      setFilters(initialFilters);
-      fetchLeaves(initialFilters);
+  useEffect(() => {
+    if (users.length > 0) {
+      if (query) {
+        const initialFilters = { ...filters };
+        Object.keys(query).forEach((key) => {
+          if (initialFilters.hasOwnProperty(key)) {
+            initialFilters[key] = query[key];
+          }
+        });
+
+        setFilters(initialFilters);
+        fetchLeaves(initialFilters, 1);
+      } else {
+        fetchLeaves(filters, 1);
+      }
     }
-  }, [query]);
+  }, [users, query]);
 
-  // 获取请销假数据
-  const fetchLeaves = async (currentFilters = filters) => {
+  const fetchUsers = async () => {
+    try {
+      const res = await axiosInstance.get('/users');
+      setUsers(res.data.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('获取用户列表失败');
+    }
+  };
+
+  const fetchLeaves = async (currentFilters = filters, page = 1) => {
     setLoading(true);
     try {
-      // 过滤掉空的筛选条件
-      const params = {};
+      const params = { page, per_page: 10 };
+  
       Object.keys(currentFilters).forEach((key) => {
         if (currentFilters[key] !== '') {
-          params[key] = currentFilters[key];
+          if (key === 'name') {
+            const matchedUsers = users.filter((user) => user.name === currentFilters.name);
+            if (matchedUsers.length > 0) {
+              params['user_id'] = matchedUsers[0].id; // 只取第一个匹配的用户
+            } else {
+              params['user_id'] = -1; // 没有匹配到用户
+            }
+          } else {
+            params[key] = currentFilters[key];
+          }
         }
       });
-
-      const res = await axiosInstance.get('/leave_requests', {
-        params,
+  
+      const res = await axiosInstance.get('/leave_requests', { params });
+  
+      setTotalPages(res.data.pages);
+      setCurrentPage(res.data.current_page);
+  
+      const resData = res.data.data.map((leave) => {
+        const user = users.find((user) => user.id === leave.user_id);
+        const userName = user ? user.name : '未知用户';
+        return { ...leave, user_name: userName };
       });
-      setLeaves(res.data);
+  
+      setLeaves(resData);
     } catch (error) {
       console.error('Error fetching leaves:', error);
       toast.error('获取请销假信息失败');
@@ -111,20 +147,22 @@ const Overview = () => {
       toast.error('没有数据可导出');
       return;
     }
-
+  
     const headers = ['姓名', '请假类型', '去向', '起始时间', '预计返回时间', '实际返回时间'];
+  
     const rows = leaves.map((leave) => [
-      leave.name,
+      leave.user_name || '未知用户', // 使用 user_name 确保获取到姓名
       leave.leave_type || '未提供',
       leave.destination || '未提供',
       formatDate(leave.start_time),
       formatDate(leave.expected_return_time),
       leave.actual_return_time ? formatDate(leave.actual_return_time) : '未销假',
     ]);
+  
     const csvContent = [headers, ...rows]
       .map((row) => row.map((cell) => `"${cell}"`).join(','))
       .join('\n');
-
+  
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -132,7 +170,7 @@ const Overview = () => {
     a.download = '请销假记录.csv';
     a.click();
     URL.revokeObjectURL(url);
-
+  
     toast.success('导出成功！');
   };
 
@@ -157,7 +195,7 @@ const Overview = () => {
 
   // 更新表格列定义
   const columns = [
-    { header: '姓名', accessor: 'name' },
+    { header: '姓名', accessor: 'user_name' }, // 使用 user_name
     { header: '请假类型', accessor: 'leave_type', hideOnMobile: false },
     { header: '去向', accessor: 'destination' },
     { header: '起始时间', accessor: 'start_time', render: (value) => formatDate(value) },
@@ -210,6 +248,12 @@ const Overview = () => {
               data={leaves}
               loading={loading}
               emptyMessage="无符合条件的记录"
+            />
+            {/* 分页控件 */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => fetchLeaves(filters, page)}
             />
           </Card>
         </div>
