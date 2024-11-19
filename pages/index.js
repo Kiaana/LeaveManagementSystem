@@ -2,16 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
-import { FaSpinner, FaUserClock, FaCheckCircle, FaExclamationCircle, FaHistory } from 'react-icons/fa';
+import { FaSpinner, FaUserClock, FaCheckCircle, FaExclamationCircle, FaHistory, FaUserCheck } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import DataTable from '../components/DataTable';
-import Card from '../components/Card'; // 引入 Card 组件
+import Card from '../components/Card';
 
 const StatCard = ({ icon: Icon, title, value, loading, bgColor, iconColor, href }) => (
   <Link href={href} legacyBehavior>
-    <motion.a 
+    <motion.a
       className={`${bgColor} p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center cursor-pointer`}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -32,16 +32,34 @@ const Home = () => {
   const [recentLeaves, setRecentLeaves] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingLeaves, setLoadingLeaves] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1); // 当前页码
+  const [totalPages, setTotalPages] = useState(1); // 总页数
 
   useEffect(() => {
     fetchStatistics();
-    fetchRecentLeaves();
+    fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      fetchRecentLeaves();
+    }
+  }, [users]);
 
   const fetchStatistics = async () => {
     try {
       const res = await axiosInstance.get('/statistics');
-      setStatistics(res.data);
+      const overallStats = res.data.overall;
+  
+      // 计算在位人数
+      const presentStudents = overallStats.total_students - overallStats.current_leave;
+  
+      // 更新统计数据
+      setStatistics({
+        ...overallStats,
+        present_students: presentStudents,
+      });
     } catch (error) {
       console.error('Error fetching statistics:', error);
       toast.error('获取统计信息失败');
@@ -50,34 +68,50 @@ const Home = () => {
     }
   };
 
-  const fetchRecentLeaves = async () => {
+  const fetchUsers = async () => {
+    try {
+      const res = await axiosInstance.get('/users');
+      setUsers(res.data.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('获取用户信息失败');
+    }
+  };
+
+  const fetchRecentLeaves = async (page = 1) => {
     try {
       const res = await axiosInstance.get('/leave_requests', {
         params: {
-          limit: 5,
-          order: 'desc',
+          page: page,
+          per_page: 10, // 每页记录数
         },
       });
   
-      const processedData = res.data.map((leave) => {
-        const now = new Date(); // 当前本地时间
-        const nowUTC = new Date(now.toISOString()); // 转换为 UTC 时间
+      const processedData = res.data.data.map((leave) => {
+        const now = new Date();
+        const nowUTC = new Date(now.toISOString());
   
-        const expectedReturnTime = new Date(leave.expected_return_time); // 服务端时间为 UTC
+        const expectedReturnTime = new Date(leave.expected_return_time);
         const actualReturnTime = leave.actual_return_time ? new Date(leave.actual_return_time) : null;
   
-        let status = 'current'; // 默认状态为请假中
+        let status = 'current';
   
         if (actualReturnTime) {
-          status = 'cancelled'; // 已销假
+          status = 'cancelled';
         } else if (expectedReturnTime < nowUTC) {
-          status = 'overdue'; // 超假
+          status = 'overdue';
         }
   
-        return { ...leave, status }; // 添加 status 字段
+        // 匹配用户姓名
+        const user = users.find((u) => u.id === leave.user_id);
+        const userName = user ? user.name : '未知用户';
+  
+        return { ...leave, status, user_name: userName };
       });
   
       setRecentLeaves(processedData);
+      setTotalPages(res.data.pages); // 更新总页数
+      setCurrentPage(res.data.current_page); // 更新当前页码
     } catch (error) {
       console.error('Error fetching recent leaves:', error);
       toast.error('获取最近请销假记录失败');
@@ -91,53 +125,84 @@ const Home = () => {
     switch (type) {
       case 'current_leave':
         return { is_cancelled: 'false' };
-      case 'cancelled_leaves':
-        return { is_cancelled: 'true' };
-      case 'over_leave':
+      case 'today_cancelled':
+        // 假设后端支持根据日期筛选
+        const today = new Date().toISOString().split('T')[0];
+        return { is_cancelled: 'true', start_date: today, end_date: today };
+      case 'overdue_leave':
         return { is_overdue: 'true' };
       default:
         return {};
     }
   };
-  
-    // 定义日期格式化函数
-    const formatDate = (value) => {
-      if (!value) return '-';
-    
-      // 解析为 UTC 时间
-      const utcDate = new Date(value);
-    
-      // 获取本地时区的偏移量（以分钟为单位）
-      const timeZoneOffset = utcDate.getTimezoneOffset() * 60000; // 转为毫秒
-    
-      // 转换为本地时间
-      const localDate = new Date(utcDate.getTime() - timeZoneOffset);
-    
-      // 格式化为东八区时间
-      const options = {
-        // year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        // second: '2-digit',
-        hour12: false,
-      };
-      return new Intl.DateTimeFormat('zh-CN', options).format(localDate);
+
+  // 定义日期格式化函数
+  const formatDate = (value) => {
+    if (!value) return '-';
+
+    const utcDate = new Date(value);
+    const timeZoneOffset = utcDate.getTimezoneOffset() * 60000;
+    const localDate = new Date(utcDate.getTime() - timeZoneOffset);
+
+    const options = {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
     };
+    return new Intl.DateTimeFormat('zh-CN', options).format(localDate);
+  };
 
   // 定义最近请销假记录的表格列
   const columns = [
-    { header: '姓名', accessor: 'name' },
+    { header: '姓名', accessor: 'user_name' },
     { header: '请假类型', accessor: 'leave_type', hideOnMobile: false },
     { header: '起始时间', accessor: 'start_time', render: formatDate },
     { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: false, render: formatDate },
   ];
 
+  // 定义分页组件
+  const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+    const handlePrevious = () => {
+      if (currentPage > 1) {
+        onPageChange(currentPage - 1);
+      }
+    };
+  
+    const handleNext = () => {
+      if (currentPage < totalPages) {
+        onPageChange(currentPage + 1);
+      }
+    };
+  
+    return (
+      <div className="flex justify-center items-center mt-6">
+        <button
+          onClick={handlePrevious}
+          disabled={currentPage === 1}
+          className="px-4 py-2 mx-1 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
+        >
+          上一页
+        </button>
+        <span className="mx-2 text-gray-600">
+          第 {currentPage} 页，共 {totalPages} 页
+        </span>
+        <button
+          onClick={handleNext}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 mx-1 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
+        >
+          下一页
+        </button>
+      </div>
+    );
+  };
+
   return (
     <PageTransition>
       <div className="container mx-auto px-4 py-6">
-        <motion.h1 
+        <motion.h1
           className="text-2xl md:text-3xl font-bold mb-8 text-center text-gray-800"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -145,11 +210,12 @@ const Home = () => {
         >
           请销假管理系统
         </motion.h1>
-
+  
         {/* 统一的内容容器 */}
         <div className="max-w-4xl mx-auto">
           {/* StatCards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+            {/* 统计卡片 */}
             <StatCard
               icon={FaUserClock}
               title="当前请假人数"
@@ -161,24 +227,33 @@ const Home = () => {
             />
             <StatCard
               icon={FaCheckCircle}
-              title="已销假人数"
-              value={statistics.cancelled_leaves || 0}
+              title="今日已销假人数"
+              value={statistics.today_cancelled || 0}
               loading={loadingStats}
               bgColor="bg-green-50"
               iconColor="text-green-500"
-              href={{ pathname: '/overview', query: buildFilterParams('cancelled_leaves') }}
+              href={{ pathname: '/overview', query: buildFilterParams('today_cancelled') }}
             />
             <StatCard
               icon={FaExclamationCircle}
               title="超假人数"
-              value={statistics.over_leave || 0}
+              value={statistics.overdue_leave || 0}
               loading={loadingStats}
               bgColor="bg-red-50"
               iconColor="text-red-500"
-              href={{ pathname: '/overview', query: buildFilterParams('over_leave') }}
+              href={{ pathname: '/overview', query: buildFilterParams('overdue_leave') }}
+            />
+            <StatCard
+              icon={FaUserClock}
+              title="在位人数"
+              value={statistics.present_students || 0}
+              loading={loadingStats}
+              bgColor="bg-yellow-50"
+              iconColor="text-yellow-500"
+              href="#"
             />
           </div>
-
+  
           {/* 表格卡片 */}
           <Card>
             <div className="flex items-center mb-6">
@@ -190,6 +265,11 @@ const Home = () => {
               data={recentLeaves}
               loading={loadingLeaves}
               emptyMessage="暂无请销假记录"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => fetchRecentLeaves(page)}
             />
           </Card>
         </div>
