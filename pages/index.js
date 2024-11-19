@@ -81,12 +81,24 @@ const Home = () => {
     }
   };
   
+    // 定义日期格式化函数
+    const formatDate = (value) => {
+      const options = {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      };
+      return new Date(value).toLocaleString('zh-CN', options).replace(',', '');
+    };
+
   // 定义最近请销假记录的表格列
   const columns = [
     { header: '姓名', accessor: 'name' },
-    { header: '请假类型', accessor: 'leave_type', hideOnMobile: true },
-    { header: '起始时间', accessor: 'start_time', render: (value) => new Date(value).toLocaleDateString() },
-    { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: true, render: (value) => new Date(value).toLocaleDateString() },
+    { header: '请假类型', accessor: 'leave_type', hideOnMobile: false },
+    { header: '起始时间', accessor: 'start_time', render: formatDate },
+    { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: false, render: formatDate },
   ];
 
   return (
