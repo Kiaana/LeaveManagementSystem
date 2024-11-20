@@ -53,13 +53,9 @@ const Home = () => {
       const res = await axiosInstance.get('/statistics');
       const overallStats = res.data.overall;
   
-      // 计算在位人数
-      const presentStudents = overallStats.total_students - overallStats.current_leave;
-  
       // 更新统计数据
       setStatistics({
         ...overallStats,
-        present_students: presentStudents,
       });
     } catch (error) {
       console.error('Error fetching statistics:', error);
