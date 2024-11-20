@@ -145,6 +145,7 @@ const Home = () => {
   const formatDate = (value) => {
     if (!value) return '-';
 
+    // 将UTC时间转换为本地时间
     const utcDate = new Date(value);
     const timeZoneOffset = utcDate.getTimezoneOffset() * 60000;
     const localDate = new Date(utcDate.getTime() - timeZoneOffset);

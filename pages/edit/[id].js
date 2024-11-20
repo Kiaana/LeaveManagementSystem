@@ -175,12 +175,15 @@ const EditLeave = () => {
                 </FormField>
 
                 {/* 出发时间 */}
-                <FormField label="出发时间" icon={FaCalendarAlt}>
+                <FormField label="出发时间" icon={FaCalendarAlt} error={errors.start_time}>
                   <input
                     type="datetime-local"
-                    {...register('start_time')}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none bg-gray-100"
-                    // readOnly // 设置为只读
+                    {...register('start_time', {
+                      required: '出发时间是必填项',
+                    })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.start_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2`}
                   />
                 </FormField>
 
