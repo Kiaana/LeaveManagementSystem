@@ -53,12 +53,33 @@ const EditLeave = () => {
       const user = users.find(user => user.id === data.user_id);
       const userName = user ? user.name : '未知用户';
 
+      // 将UTC时间换算为本地时间显示
+      const startTime = new Date(data.start_time);
+      const expectedReturnTime = new Date(data.expected_return_time);
+      
+      // 本地时间
+      const localStartTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000);
+      const localExpectedReturnTime = new Date(expectedReturnTime.getTime() - expectedReturnTime.getTimezoneOffset() * 60000);
+
+      // 格式化本地时间为 'YYYY-MM-DDTHH:mm'
+      const formatLocalTime = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      };
+
+      data.start_time = formatLocalTime(localStartTime);
+      data.expected_return_time = formatLocalTime(localExpectedReturnTime);
+
       setValue('name', userName);
       setValue('leave_type', data.leave_type);
       setValue('destination', data.destination);
       setValue('approver', data.approver);
-      setValue('start_time', data.start_time.substring(0, 16));
-      setValue('expected_return_time', data.expected_return_time.substring(0, 16));
+      setValue('start_time', data.start_time);
+      setValue('expected_return_time', data.expected_return_time);
 
       setUserId(data.user_id);
     } catch (error) {
