@@ -227,11 +227,12 @@ const MajorOverview = () => {
             }
           >
             {filteredMajorData.map((item, index) => (
-              <MajorCard
+                <MajorCard
                 key={item.major}
                 data={item}
                 animate={true}
-              />
+                onClick={handleMajorClick}
+                />
             ))}
           </div>
         )}
