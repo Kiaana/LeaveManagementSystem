@@ -159,7 +159,7 @@ const EditLeave = () => {
                     type="datetime-local"
                     {...register('start_time')}
                     className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none bg-gray-100"
-                    readOnly // 设置为只读
+                    // readOnly // 设置为只读
                   />
                 </FormField>
 
