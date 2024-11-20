@@ -34,113 +34,114 @@ const FilterForm = ({ filters, handleChange, handleSubmit, handleReset }) => {
       {/* 筛选表单 */}
       <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[800px]' : 'max-h-0'}`}>
         <form onSubmit={handleSubmit} className="p-4 border-t border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 姓名 */}
-            <div className="form-group">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                姓名
-              </label>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                value={filters.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="请输入姓名"
-              />
-            </div>
-
-            {/* 请假类型 */}
-            <div className="form-group">
-              <label htmlFor="leave_type" className="block text-sm font-medium text-gray-700 mb-1">
-                请假类型
-              </label>
-              <input
-                type="text"
-                name="leave_type"
-                id="leave_type"
-                value={filters.leave_type}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="例如：病假"
-              />
-            </div>
-
-            {/* 去向 */}
-            <div className="form-group">
-              <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
-                去向
-              </label>
-              <input
-                type="text"
-                name="destination"
-                id="destination"
-                value={filters.destination}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="例如：医院"
-              />
-            </div>
-
-            {/* 日期范围 */}
-            <div className="form-group">
-              <label className="block text-sm font-medium text-gray-700 mb-1">日期范围</label>
-              <div className="flex items-center space-x-2">
+            {/* 修改网格布局 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 姓名 */}
+              <div className="form-group">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  姓名
+                </label>
                 <input
-                  type="date"
-                  name="start_date"
-                  value={filters.start_date}
+                  type="text"
+                  name="name"
+                  id="name"
+                  value={filters.name}
                   onChange={handleChange}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-                <span className="text-gray-500">至</span>
-                <input
-                  type="date"
-                  name="end_date"
-                  value={filters.end_date}
-                  onChange={handleChange}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="请输入姓名"
                 />
               </div>
+  
+              {/* 请假类型 */}
+              <div className="form-group">
+                <label htmlFor="leave_type" className="block text-sm font-medium text-gray-700 mb-1">
+                  请假类型
+                </label>
+                <input
+                  type="text"
+                  name="leave_type"
+                  id="leave_type"
+                  value={filters.leave_type}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="例如：病假"
+                />
+              </div>
+  
+              {/* 去向 */}
+              <div className="form-group">
+                <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
+                  去向
+                </label>
+                <input
+                  type="text"
+                  name="destination"
+                  id="destination"
+                  value={filters.destination}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="例如：医院"
+                />
+              </div>
+  
+              {/* 状态选择 */}
+              <div className="form-group">
+                <label htmlFor="is_cancelled" className="block text-sm font-medium text-gray-700 mb-1">
+                  销假状态
+                </label>
+                <select
+                  name="is_cancelled"
+                  id="is_cancelled"
+                  value={filters.is_cancelled}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
+                >
+                  <option value="">全部</option>
+                  <option value="true">已销假</option>
+                  <option value="false">未销假</option>
+                </select>
+              </div>
+  
+              {/* 超假状态 */}
+              <div className="form-group">
+                <label htmlFor="is_overdue" className="block text-sm font-medium text-gray-700 mb-1">
+                  超假状态
+                </label>
+                <select
+                  name="is_overdue"
+                  id="is_overdue"
+                  value={filters.is_overdue}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
+                >
+                  <option value="">全部</option>
+                  <option value="true">超假</option>
+                  <option value="false">未超假</option>
+                </select>
+              </div>
+  
+              {/* 日期范围 - 修改为跨越两列 */}
+              <div className="form-group md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">日期范围</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={filters.start_date}
+                    onChange={handleChange}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                  <span className="text-gray-500">至</span>
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={filters.end_date}
+                    onChange={handleChange}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
             </div>
-
-            {/* 状态选择 */}
-            <div className="form-group">
-              <label htmlFor="is_cancelled" className="block text-sm font-medium text-gray-700 mb-1">
-                销假状态
-              </label>
-              <select
-                name="is_cancelled"
-                id="is_cancelled"
-                value={filters.is_cancelled}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
-              >
-                <option value="">全部</option>
-                <option value="true">已销假</option>
-                <option value="false">未销假</option>
-              </select>
-            </div>
-
-            {/* 超假状态 */}
-            <div className="form-group">
-              <label htmlFor="is_overdue" className="block text-sm font-medium text-gray-700 mb-1">
-                超假状态
-              </label>
-              <select
-                name="is_overdue"
-                id="is_overdue"
-                value={filters.is_overdue}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
-              >
-                <option value="">全部</option>
-                <option value="true">超假</option>
-                <option value="false">未超假</option>
-              </select>
-            </div>
-          </div>
 
           {/* 操作按钮 */}
           <div className="flex justify-end mt-6 space-x-3">
