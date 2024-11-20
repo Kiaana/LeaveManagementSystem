@@ -1,6 +1,6 @@
 // components/Navbar.js
 import Link from 'next/link';
-import { FaHome, FaCalendarAlt, FaClipboardList, FaSignOutAlt } from 'react-icons/fa';
+import { FaHome, FaCalendarAlt, FaClipboardList, FaSignOutAlt, FaUniversity } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import { FiMenu } from 'react-icons/fi';
 import { useRouter } from 'next/router';
@@ -32,6 +32,7 @@ const Navbar = () => {
 
     const navItems = [
         { path: '/', icon: FaHome, label: '首页' },
+        { path: '/major_overview', icon: FaUniversity, label: '专业概览' },
         { path: '/leave_request', icon: FaCalendarAlt, label: '请假申请' },
         { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假申请' },
         { path: '/overview', icon: FaClipboardList, label: '信息总览' },
