@@ -175,7 +175,7 @@ const Home = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          请销假管理系统
+          请销假登记系统
         </motion.h1>
   
         {/* 统一的内容容器 */}

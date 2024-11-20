@@ -115,7 +115,7 @@ const LeaveRequest = () => {
             className="bg-white rounded-xl shadow-lg p-6 md:p-8"
           >
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">
-              请假申请
+              请假信息填报
             </h1>
 
             {loadingUsers ? (
@@ -244,7 +244,7 @@ const LeaveRequest = () => {
                         <FaSpinner className="animate-spin mr-2" />
                         提交中...
                       </>
-                    ) : '提交申请'}
+                    ) : '提交信息'}
                   </Button>
                   <Button type="button" onClick={() => reset()} variant="secondary">
                     重置表单

@@ -33,8 +33,8 @@ const Navbar = () => {
     const navItems = [
         { path: '/', icon: FaHome, label: '首页' },
         { path: '/major_overview', icon: FaUniversity, label: '专业概览' },
-        { path: '/leave_request', icon: FaCalendarAlt, label: '请假申请' },
-        { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假申请' },
+        { path: '/leave_request', icon: FaCalendarAlt, label: '请假登记' },
+        { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假登记' },
         { path: '/overview', icon: FaClipboardList, label: '信息总览' },
     ];
 
@@ -47,7 +47,7 @@ const Navbar = () => {
                     {/* Logo */}
                     <Link href="/" className="flex items-center space-x-2 text-gray-800 text-xl font-bold">
                         <FaClipboardList className="text-2xl text-blue-600" />
-                        <span>请销假系统</span>
+                        <span>请销假登记系统</span>
                     </Link>
 
                     {/* Desktop Menu */}

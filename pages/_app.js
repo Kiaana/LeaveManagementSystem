@@ -5,8 +5,8 @@ import { AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 
 function MyApp({ Component, pageProps, router }) {
-  const title = "请销假管理系统";
-  const description = "请销假管理系统是一个由RustyPiano开发的用于管理学员请假和销假的应用程序。";
+  const title = "请销假登记系统";
+  const description = "请销假登记系统是一个由RustyPiano开发的用于登记学员请假和销假信息的应用程序。";
 
   return (
     <>
