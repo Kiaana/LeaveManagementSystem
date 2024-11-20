@@ -12,7 +12,7 @@ export default function Document() {
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
         {/* 设置主题颜色 */}
-        <meta name="theme-color" content="#4A90E2" />
+        <meta name="theme-color" content="#ffffff" />
       </Head>
       <body>
         <Main />
