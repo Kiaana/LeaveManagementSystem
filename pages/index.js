@@ -215,7 +215,7 @@ const Home = () => {
               href={{ pathname: '/overview', query: buildFilterParams('overdue_leave') }}
             />
             <StatCard
-              icon={FaUserClock}
+              icon={FaUserCheck}
               title="在位人数"
               value={statistics.present_students || 0}
               loading={loadingStats}
