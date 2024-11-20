@@ -40,13 +40,13 @@ const Navbar = () => {
 
     return (
         <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${
-            scrolled ? 'bg-gray-800/95 shadow-lg backdrop-blur-sm' : 'bg-gray-800'
+            scrolled ? 'bg-white shadow-md' : 'bg-white'
         }`}>
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center space-x-2 text-white text-xl font-bold">
-                        <FaClipboardList className="text-2xl" />
+                    <Link href="/" className="flex items-center space-x-2 text-gray-800 text-xl font-bold">
+                        <FaClipboardList className="text-2xl text-blue-600" />
                         <span>请销假系统</span>
                     </Link>
 
@@ -58,8 +58,8 @@ const Navbar = () => {
                                 href={item.path}
                                 className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
                                     ${isActive(item.path)
-                                        ? 'text-white bg-gray-700'
-                                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                                        ? 'text-blue-600 bg-blue-50'
+                                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                                     }`}
                             >
                                 <item.icon className="mr-2 text-lg" />
@@ -71,7 +71,7 @@ const Navbar = () => {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="lg:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none"
+                        className="lg:hidden p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-blue-50 focus:outline-none"
                     >
                         <FiMenu size={24} />
                     </button>
@@ -93,8 +93,8 @@ const Navbar = () => {
                                 onClick={handleClose}
                                 className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200
                                     ${isActive(item.path)
-                                        ? 'text-white bg-gray-700'
-                                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                                        ? 'text-blue-600 bg-blue-50'
+                                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                                     }`}
                             >
                                 <item.icon className="mr-3 text-xl" />

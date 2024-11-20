@@ -145,7 +145,7 @@ const CancelLeave = () => {
                         className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
                           errors.cancellation_method ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                         } focus:border-transparent focus:outline-none focus:ring-2`}
-                        placeholder="例如：当面销假、微信销假等"
+                        placeholder="例如：教导员处当面销假、微信销假等"
                       />
                     </FormField>
 
