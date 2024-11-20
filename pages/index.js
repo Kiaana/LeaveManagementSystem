@@ -89,15 +89,16 @@ const Home = () => {
         const nowLocal = new Date(now.toISOString());
         // 使用本地时间计算UTC时间
         const nowUTC = new Date(nowLocal.getTime() + nowLocal.getTimezoneOffset() * 60000);
-        // console.log('nowUTC:', nowUTC);
   
         const expectedReturnTime = new Date(leave.expected_return_time);
-        // console.log('expectedReturnTime:', expectedReturnTime);
         const actualReturnTime = leave.actual_return_time ? new Date(leave.actual_return_time) : null;
 
+        // 根据请假状态计算状态，共四种状态：current, cancelled, overdue, not_started
         let status = 'current';
-  
-        if (actualReturnTime) {
+        // 如果现在时间早于开始时间，则状态为未开始
+        if (nowUTC < new Date(leave.start_time)) {
+          status = 'not_started';
+        } else if (actualReturnTime) {
           status = 'cancelled';
         } else if (expectedReturnTime < nowUTC) {
           status = 'overdue';

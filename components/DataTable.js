@@ -31,6 +31,12 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
       bg: 'bg-red-50',
       border: 'border-l-4 border-l-red-500',
       text: 'text-red-700'
+    },
+    // 未开始为灰色
+    not_started: {
+      bg: 'bg-gray-50',
+      border: 'border-l-4 border-l-gray-500',
+      text: 'text-gray-700'
     }
   };
 
