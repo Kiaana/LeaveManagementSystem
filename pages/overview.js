@@ -219,8 +219,9 @@ const Overview = () => {
   // 更新表格列定义
   const columns = [
     { header: '姓名', accessor: 'user_name' },
-    { header: '请假类型', accessor: 'leave_type', hideOnMobile: false },
+    { header: '请假事由', accessor: 'leave_type', hideOnMobile: false },
     { header: '去向', accessor: 'destination' },
+    { header: '批假人', accessor: 'approver' },
     { header: '起始时间', accessor: 'start_time', render: (value) => formatDate(value) },
     { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: false, render: (value) => formatDate(value) },
     { header: '实际返回时间', accessor: 'actual_return_time', render: (value) => (value ? formatDate(value) : '未销假') },
