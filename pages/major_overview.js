@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
 import { motion } from 'framer-motion';
-import { FaSpinner, FaUserGraduate, FaSearch, FaChartPie, FaList } from 'react-icons/fa';
+import { FaSpinner, FaUserGraduate, FaSearch, FaGripHorizontal, FaList } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Card from '../components/Card';
 import { useRouter } from 'next/router';
@@ -221,7 +221,7 @@ const MajorOverview = () => {
                 viewMode === 'grid' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
-              <FaChartPie className="text-lg" />
+              <FaGripHorizontal className="text-lg" />
             </button>
             <button
               onClick={() => setViewMode('list')}
