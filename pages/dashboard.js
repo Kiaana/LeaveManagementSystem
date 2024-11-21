@@ -1,6 +1,7 @@
 // pages/dashboard.js
 import React, { useEffect, useState, useRef } from 'react';
 import axiosInstance from '../services/axiosConfig';
+import axios from 'axios';
 import {
     FaSpinner,
     FaSun,
@@ -9,6 +10,17 @@ import {
     FaUserGraduate,
     FaClock,
     FaCalendarAlt,
+    FaCloudSun,
+    FaCloudSunRain,
+    FaCloud,
+    FaWind,
+    FaSmog,
+    FaBolt,
+    FaCloudShowersHeavy,
+    FaSnowflake,
+    FaTemperatureHigh,
+    FaTemperatureLow,
+    FaQuestionCircle,
 } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -33,6 +45,78 @@ const LIGHT_COLORS = [
     '#32CD32',   // 鲜艳的绿色
     '#FF8C00'    // 深橙色
 ];
+
+// 天气图标映射
+const weatherIcons = {
+    '晴': FaSun,
+    '少云': FaCloudSun,
+    '晴间多云': FaCloudSunRain,
+    '多云': FaCloud,
+    '阴': FaCloud,
+    '有风': FaWind,
+    '平静': FaWind,
+    '微风': FaWind,
+    '和风': FaWind,
+    '清风': FaWind,
+    '强风/劲风': FaWind,
+    '疾风': FaWind,
+    '大风': FaWind,
+    '烈风': FaWind,
+    '风暴': FaWind,
+    '狂爆风': FaWind,
+    '飓风': FaWind,
+    '热带风暴': FaWind,
+    '霾': FaSmog,
+    '中度霾': FaSmog,
+    '重度霾': FaSmog,
+    '严重霾': FaSmog,
+    '阵雨': FaCloudRain,
+    '雷阵雨': FaBolt,
+    '雷阵雨并伴有冰雹': FaBolt,
+    '小雨': FaCloudRain,
+    '中雨': FaCloudRain,
+    '大雨': FaCloudRain,
+    '暴雨': FaCloudShowersHeavy,
+    '大暴雨': FaCloudShowersHeavy,
+    '特大暴雨': FaCloudShowersHeavy,
+    '强阵雨': FaCloudRain,
+    '强雷阵雨': FaBolt,
+    '极端降雨': FaCloudShowersHeavy,
+    '毛毛雨/细雨': FaCloudRain,
+    '雨': FaCloudRain,
+    '小雨-中雨': FaCloudRain,
+    '中雨-大雨': FaCloudRain,
+    '大雨-暴雨': FaCloudRain,
+    '暴雨-大暴雨': FaCloudShowersHeavy,
+    '大暴雨-特大暴雨': FaCloudShowersHeavy,
+    '雨雪天气': FaCloudSunRain,
+    '雨夹雪': FaCloudSunRain,
+    '阵雨夹雪': FaCloudSunRain,
+    '冻雨': FaCloudRain,
+    '雪': FaSnowflake,
+    '阵雪': FaSnowflake,
+    '小雪': FaSnowflake,
+    '中雪': FaSnowflake,
+    '大雪': FaSnowflake,
+    '暴雪': FaSnowflake,
+    '小雪-中雪': FaSnowflake,
+    '中雪-大雪': FaSnowflake,
+    '大雪-暴雪': FaSnowflake,
+    '浮尘': FaWind,
+    '扬沙': FaWind,
+    '沙尘暴': FaWind,
+    '强沙尘暴': FaWind,
+    '龙卷风': FaWind,
+    '雾': FaSmog,
+    '浓雾': FaSmog,
+    '强浓雾': FaSmog,
+    '轻雾': FaSmog,
+    '大雾': FaSmog,
+    '特强浓雾': FaSmog,
+    '热': FaTemperatureHigh,
+    '冷': FaTemperatureLow,
+    '未知': FaQuestionCircle, // 需要导入 FaQuestionCircle
+};
 
 const Dashboard = () => {
     const [statistics, setStatistics] = useState(null);
@@ -124,13 +208,23 @@ const Dashboard = () => {
     // 获取天气信息
     const fetchWeather = async () => {
         try {
-            // 这里可以集成真实的天气API
-            // 示例数据：
-            setWeather({
-                main: { temp: 25 },
-                weather: [{ description: '晴', icon: '01d' }],
-            });
+            const localAxios = axios.create(); // 创建新的 axios 实例，无基础 URL
+            const res = await localAxios.get('/api/weather'); // 请求相对路径
+            if (res.data.status === '1' && res.data.lives && res.data.lives.length > 0) {
+                const live = res.data.lives[0];
+                setWeather({
+                    weather: live.weather,
+                    temperature: live.temperature,
+                    winddirection: live.winddirection,
+                    windpower: live.windpower,
+                    humidity: live.humidity,
+                    reporttime: live.reporttime,
+                });
+            } else {
+                toast.error('获取天气信息失败');
+            }
         } catch (error) {
+            console.error('Error fetching weather:', error);
             toast.error('获取天气信息失败');
         } finally {
             setLoadingWeather(false);
@@ -223,13 +317,12 @@ const Dashboard = () => {
                             <FaSpinner className="animate-spin text-4xl" />
                         ) : (
                             <>
-                                {weather?.weather?.[0]?.icon.startsWith('01') ? (
-                                    <FaSun className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'} text-6xl mb-2`} />
-                                ) : (
-                                    <FaCloudRain className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} text-6xl mb-2`} />
-                                )}
-                                <div className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{weather?.main?.temp}°C</div>
-                                <div className={`capitalize ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{weather?.weather?.[0]?.description}</div>
+                                {(() => {
+                                    const WeatherIcon = weatherIcons[weather?.weather] || FaQuestionCircle;
+                                    return <WeatherIcon className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'} text-6xl mb-2`} />;
+                                })()}
+                                <div className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{weather?.temperature}°C</div>
+                                <div className={`capitalize ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{weather?.weather}</div>
                             </>
                         )}
                     </div>
