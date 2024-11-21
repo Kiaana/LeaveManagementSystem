@@ -26,7 +26,13 @@ dayjs.extend(localizedFormat);
 
 // 定义颜色数组
 const DARK_COLORS = ['#4DC9FF', '#FF6384', '#FFCE56', '#36A2EB', '#FF9F40'];
-const LIGHT_COLORS = ['#FF7F50', '#FF69B4', '#FFA07A', '#87CEFA', '#32CD32']; // 更鲜艳的颜色
+const LIGHT_COLORS = [
+    '#FF4B4B',   // 鲜艳的红色
+    '#FF1493',   // 深粉红
+    '#4169E1',   // 皇家蓝
+    '#32CD32',   // 鲜艳的绿色
+    '#FF8C00'    // 深橙色
+];
 
 const Dashboard = () => {
     const [statistics, setStatistics] = useState(null);
@@ -192,7 +198,7 @@ const Dashboard = () => {
                 {/* 页面顶部标题 */}
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-center flex items-center justify-center">
-                        <FaUserGraduate className={`mr-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
+                        <FaUserGraduate className={`mr-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'}`} />
                         学员四队
                     </h1>
                 </div>
@@ -201,7 +207,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {/* 当前时间 */}
                     <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg flex flex-col items-center transition-colors duration-300`}>
-                        <FaClock className={`text-4xl mb-4 animate-pulse ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
+                        <FaClock className={`text-4xl mb-4 animate-pulse ${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'}`} />
                         <div className="text-xl">{currentTime.format('YYYY年MM月DD日')}</div>
                         <div className="text-2xl font-bold mt-2">{currentTime.format('HH:mm')}</div>
                     </div>
@@ -213,7 +219,7 @@ const Dashboard = () => {
                         ) : (
                             <>
                                 {weather?.weather?.[0]?.icon.startsWith('01') ? (
-                                    <FaSun className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'} text-6xl mb-2`} />
+                                    <FaSun className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'} text-6xl mb-2`} />
                                 ) : (
                                     <FaCloudRain className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} text-6xl mb-2`} />
                                 )}
@@ -257,7 +263,7 @@ const Dashboard = () => {
                     {[
                         { label: '全队人数', value: statistics?.overall?.total_students, icon: FaUserGraduate, color: 'text-blue-500' },
                         { label: '当前请假人数', value: statistics?.overall?.current_leave, icon: FaUserAlt, color: 'text-red-500' },
-                        { label: '超假人数', value: statistics?.overall?.overdue_leave, icon: FaClock, color: 'text-yellow-500' },
+                        { label: '超假人数', value: statistics?.overall?.overdue_leave, icon: FaClock, color: 'text-yellow-400' },
                         { label: '在位人数', value: statistics?.overall?.present_students, icon: FaUserAlt, color: 'text-green-500' },
                     ].map((item, index) => (
                         <div key={index} className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg flex items-center transition-colors duration-300`}>
@@ -277,7 +283,7 @@ const Dashboard = () => {
                     {/* 请假去向分布 */}
                     <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg transition-colors duration-300`} style={{ height: '450px' }}>
                         <h3 className={`text-xl font-semibold mb-4 flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                            <FaUserGraduate className={`mr-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`} /> 请假去向分布
+                            <FaUserGraduate className={`mr-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'}`} /> 请假去向分布
                         </h3>
                         {loadingStats ? (
                             <div className="flex justify-center items-center h-full">
