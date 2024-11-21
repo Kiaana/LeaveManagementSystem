@@ -10,7 +10,22 @@ import DataTable from '../components/DataTable';
 import Card from '../components/Card';
 import Pagination from '../components/Pagination';
 
-const StatCard = ({ icon: Icon, title, value, loading, bgColor, iconColor, href }) => (
+// 防止多次触发 API 调用的防抖工具
+let isFetching = false;
+const fetchWithDebounce = async (fetchFunction) => {
+  if (isFetching) return;
+  isFetching = true;
+  try {
+    await fetchFunction();
+  } catch (err) {
+    console.error('Fetch error:', err);
+  } finally {
+    isFetching = false;
+  }
+};
+
+// 卡片组件，使用 React.memo 优化
+const StatCard = React.memo(({ icon: Icon, title, value, loading, bgColor, iconColor, href }) => (
   <Link href={href} legacyBehavior>
     <motion.a
       className={`${bgColor} p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center cursor-pointer`}
@@ -26,7 +41,7 @@ const StatCard = ({ icon: Icon, title, value, loading, bgColor, iconColor, href 
       )}
     </motion.a>
   </Link>
-);
+));
 
 const Home = () => {
   const [statistics, setStatistics] = useState({});
@@ -37,6 +52,7 @@ const Home = () => {
   const [currentPage, setCurrentPage] = useState(1); // 当前页码
   const [totalPages, setTotalPages] = useState(1); // 总页数
 
+  // 初始加载时拉取数据
   useEffect(() => {
     fetchStatistics();
     fetchUsers();
@@ -47,6 +63,24 @@ const Home = () => {
       fetchRecentLeaves();
     }
   }, [users]);
+
+  // 定时更新数据
+  useEffect(() => {
+    // 每半分钟更新统计数据
+    const statsInterval = setInterval(() => {
+      fetchWithDebounce(fetchStatistics);
+    }, 30000);
+
+    // 每半分钟更新请销假记录
+    const leavesInterval = setInterval(() => {
+      fetchWithDebounce(() => fetchRecentLeaves(currentPage));
+    }, 30000);
+
+    return () => {
+      clearInterval(statsInterval);
+      clearInterval(leavesInterval);
+    };
+  }, [currentPage]);
 
   const fetchStatistics = async () => {
     try {
@@ -83,13 +117,13 @@ const Home = () => {
           per_page: 10, // 每页记录数
         },
       });
-  
+
       const processedData = res.data.data.map((leave) => {
         const now = new Date();
         const nowLocal = new Date(now.toISOString());
         // 使用本地时间计算UTC时间
         const nowUTC = new Date(nowLocal.getTime() + nowLocal.getTimezoneOffset() * 60000);
-  
+
         const expectedReturnTime = new Date(leave.expected_return_time);
         const actualReturnTime = leave.actual_return_time ? new Date(leave.actual_return_time) : null;
 
@@ -103,17 +137,17 @@ const Home = () => {
         } else if (expectedReturnTime < nowUTC) {
           status = 'overdue';
         }
-  
+
         // 匹配用户姓名
         const user = users.find((u) => u.id === leave.user_id);
         const userName = user ? user.name : '未知用户';
-  
+
         return { ...leave, status, user_name: userName };
       });
-  
+
       setRecentLeaves(processedData);
-      setTotalPages(res.data.pages); // 更新总页数
-      setCurrentPage(res.data.current_page); // 更新当前页码
+      setTotalPages(res.data.pages);
+      setCurrentPage(res.data.current_page);
     } catch (error) {
       console.error('Error fetching recent leaves:', error);
       toast.error('获取最近请销假记录失败');
@@ -129,10 +163,10 @@ const Home = () => {
         return { is_cancelled: 'false' };
       case 'today_cancelled':
         const today = new Date().toISOString().split('T')[0];
-        return { 
-          is_cancelled: 'true', 
-          start_date: today, 
-          end_date: today 
+        return {
+          is_cancelled: 'true',
+          start_date: today,
+          end_date: today,
         };
       case 'overdue_leave':
         return { is_overdue: 'true' };
@@ -181,7 +215,7 @@ const Home = () => {
         >
           请销假登记系统
         </motion.h1>
-  
+
         {/* 统一的内容容器 */}
         <div className="max-w-4xl mx-auto">
           {/* StatCards */}
@@ -224,7 +258,7 @@ const Home = () => {
               href="/major_overview"
             />
           </div>
-  
+
           {/* 表格卡片 */}
           <Card>
             <div className="flex items-center mb-6">
