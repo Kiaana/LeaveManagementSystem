@@ -1,4 +1,5 @@
 {
+    "id": "/",
     "name": "请销假登记系统",
     "short_name": "请销假",
     "description": "一个用于登记请销假记录的系统",
@@ -14,8 +15,18 @@
         "type": "image/png"
       }
     ],
+    "screenshots": [],
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
+    "orientation": "portrait-primary",
     "theme_color": "#ffffff",
-    "background_color": "#ffffff"
+    "background_color": "#ffffff",
+    "lang": "zh-CN",
+    "dir": "ltr",
+    "categories": ["工具", "效率"],
+    "prefer_related_applications": false,
+    "launch_handler": {
+      "client_mode": "auto"
+    }
   }
