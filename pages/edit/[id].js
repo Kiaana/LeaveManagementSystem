@@ -28,14 +28,18 @@ const EditLeave = () => {
     formState: { errors }, 
     setValue, 
     watch, 
-    reset 
+    reset,
+    setError,
+    clearErrors 
   } = useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const { users } = useUsers();
   const [userId, setUserId] = useState(null);
+  const [nameValidated, setNameValidated] = useState(false);
 
   const startTime = watch('start_time');
+  const destinationType = watch('destination_type');
 
   useEffect(() => {
     if (id && users.length > 0) {
@@ -43,6 +47,16 @@ const EditLeave = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, users]);
+
+  useEffect(() => {
+    if (destinationType === '一号院') {
+      setValue('destination', '一号院');
+    } else if (destinationType === '921医院') {
+      setValue('destination', '921医院');
+    } else {
+      setValue('destination', '');
+    }
+  }, [destinationType, setValue]);
 
   const fetchLeave = async () => {
     try {
@@ -81,7 +95,17 @@ const EditLeave = () => {
       setValue('start_time', data.start_time);
       setValue('expected_return_time', data.expected_return_time);
 
+      // 设置 destination_type
+      if (data.destination === '一号院' || data.destination === '921医院') {
+        setValue('destination_type', data.destination);
+      } else if (data.destination === '三号院内') {
+        setValue('destination_type', '三号院内');
+      } else {
+        setValue('destination_type', '其他');
+      }
+
       setUserId(data.user_id);
+      setNameValidated(true);
     } catch (error) {
       console.error('Error fetching leave request:', error);
       toast.error('获取请假信息失败');
@@ -91,10 +115,19 @@ const EditLeave = () => {
   };
 
   const onSubmit = async (data) => {
+    if (!userId) {
+      setError('name', { type: 'manual', message: '请输入有效的姓名' });
+      return;
+    }
     setLoading(true);
     data.start_time = new Date(data.start_time).toISOString();
     data.expected_return_time = new Date(data.expected_return_time).toISOString();
     data.user_id = userId;
+
+    // 根据 destination_type 设置 destination
+    if (data.destination_type === '一号院' || data.destination_type === '921医院') {
+      data.destination = data.destination_type;
+    }
 
     try {
       await axiosInstance.put(`/leave_requests/${id}`, data);
@@ -110,7 +143,7 @@ const EditLeave = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-white py-8">
         <div className="container max-w-2xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -128,10 +161,10 @@ const EditLeave = () => {
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* 姓名 */}
-                <FormField label="姓名" icon={FaUser}>
+                <FormField label="姓名" icon={FaUser} error={errors.name}>
                   <input
                     type="text"
-                    {...register('name')}
+                    {...register('name', { required: '请输入姓名' })}
                     className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none bg-gray-100"
                     placeholder="请输入您的姓名"
                     readOnly // 设置为只读
@@ -150,23 +183,50 @@ const EditLeave = () => {
                   />
                 </FormField>
 
-                {/* 请假去向 */}
-                <FormField label="请假去向" icon={FaMapMarkerAlt} error={errors.destination}>
-                  <input
-                    type="text"
-                    {...register('destination', { required: '请假去向是必填项' })}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                      errors.destination ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                {/* 请假去向类型 */}
+                <FormField label="请假去向类型" icon={FaMapMarkerAlt} error={errors.destination_type}>
+                  <select
+                    {...register('destination_type', { required: '请选择请假去向类型' })}
+                    className={`w-full pl-10 pr-10 py-2.5 rounded-lg border ${
+                      errors.destination_type ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                     } focus:border-transparent focus:outline-none focus:ring-2`}
-                    placeholder="例如：医院、学院等"
-                  />
+                  >
+                    <option value="">请选择</option>
+                    <option value="三号院内">三号院内</option>
+                    <option value="一号院">一号院</option>
+                    <option value="921医院">921医院</option>
+                    <option value="其他">其他</option>
+                  </select>
                 </FormField>
+
+                {/* 动态显示请假去向 */}
+                {(destinationType === '三号院内' || destinationType === '其他') && (
+                  <FormField label="请假去向" icon={FaMapMarkerAlt} error={errors.destination}>
+                    <input
+                      type="text"
+                      {...register('destination', { 
+                        required: '请输入请假去向',
+                        minLength: { value: 2, message: '请假去向至少2个字符' },
+                        maxLength: { value: 50, message: '请假去向不能超过50个字符' }
+                      })}
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                        errors.destination ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                      } focus:border-transparent focus:outline-none focus:ring-2`}
+                      placeholder="例如：医院、学院等"
+                    />
+                  </FormField>
+                )}
 
                 {/* 批假人 */}
                 <FormField label="批假人" icon={FaUserTie} error={errors.approver}>
                   <input
                     type="text"
-                    {...register('approver', { required: '批假人是必填项' })}
+                    {...register('approver', { 
+                      required: '批假人是必填项',
+                      minLength: { value: 2, message: '批假人姓名至少2个字符' },
+                      maxLength: { value: 20, message: '批假人姓名不能超过20个字符' },
+                      pattern: { value: /^[\u4e00-\u9fa5·]+$/, message: '批假人姓名只能包含中文字符' }
+                    })}
                     className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
                       errors.approver ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                     } focus:border-transparent focus:outline-none focus:ring-2`}
@@ -201,9 +261,13 @@ const EditLeave = () => {
                   />
                 </FormField>
 
+                {errors.submit && (
+                  <p className="text-red-500 text-center">{errors.submit.message}</p>
+                )}
+
                 {/* 提交按钮 */}
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-                  <Button type="submit" disabled={loading} variant="primary">
+                  <Button type="submit" disabled={loading || errors.submit || !nameValidated} variant="primary">
                     {loading ? (
                       <>
                         <FaSpinner className="animate-spin mr-2" />
