@@ -19,7 +19,7 @@ import Button from '../components/Button';
 import useUsers from '../hooks/useUsers'; // 引入自定义 Hook
 
 const LeaveRequest = () => {
-  const { register, handleSubmit, formState: { errors }, reset, watch, setError, clearErrors } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset, watch, setError, clearErrors, setValue } = useForm();
   const [loading, setLoading] = useState(false);
   const { users, loadingUsers } = useUsers(); // 使用自定义 Hook
   const [userId, setUserId] = useState(null);
@@ -28,6 +28,7 @@ const LeaveRequest = () => {
   const name = watch('name');
   const startTime = watch('start_time');
   const expectedReturnTime = watch('expected_return_time');
+  const destinationType = watch('destination_type');
 
   useEffect(() => {
     if (name && users.length > 0) {
@@ -39,6 +40,16 @@ const LeaveRequest = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, users]);
+
+  useEffect(() => {
+    if (destinationType === '一号院') {
+      setValue('destination', '一号院');
+    } else if (destinationType === '921医院') {
+      setValue('destination', '921医院');
+    } else {
+      setValue('destination', '');
+    }
+  }, [destinationType, setValue]);
 
   const validateUserName = (enteredName) => {
     const matchedUser = users.find(user => user.name === enteredName.trim());
@@ -87,6 +98,11 @@ const LeaveRequest = () => {
     data.expected_return_time = new Date(data.expected_return_time).toISOString();
     data.user_id = userId;
 
+    // 根据 destination_type 设置 destination
+    if (destinationType === '一号院' || destinationType === '921医院') {
+      data.destination = destinationType;
+    }
+
     try {
       await axiosInstance.post('/leave_requests', data);
       toast.success('请假申请提交成功');
@@ -107,7 +123,7 @@ const LeaveRequest = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-white py-8">
         <div className="container max-w-2xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -157,20 +173,37 @@ const LeaveRequest = () => {
                       />
                     </FormField>
 
-                    <FormField label="请假去向" icon={FaMapMarkerAlt} error={errors.destination}>
-                      <input
-                        type="text"
-                        {...register('destination', { 
-                          required: '请输入请假去向',
-                          minLength: { value: 2, message: '请假去向至少2个字符' },
-                          maxLength: { value: 50, message: '请假去向不能超过50个字符' }
-                        })}
-                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                          errors.destination ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    <FormField label="请假去向类型" icon={FaMapMarkerAlt} error={errors.destination_type}>
+                      <select
+                        {...register('destination_type', { required: '请选择请假去向类型' })}
+                        className={`w-full pl-10 pr-10 py-2.5 rounded-lg border ${
+                          errors.destination_type ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                         } focus:border-transparent focus:outline-none focus:ring-2`}
-                        placeholder="例如：医院、学院等"
-                      />
+                      >
+                        <option value="">请选择</option>
+                        <option value="三号院内">三号院内</option>
+                        <option value="一号院">一号院</option>
+                        <option value="921医院">921医院</option>
+                        <option value="其他">其他</option>
+                      </select>
                     </FormField>
+
+                    {(destinationType === '三号院内' || destinationType === '其他') && (
+                      <FormField label="请假去向" icon={FaMapMarkerAlt} error={errors.destination}>
+                        <input
+                          type="text"
+                          {...register('destination', { 
+                            required: '请输入请假去向',
+                            minLength: { value: 2, message: '请假去向至少2个字符' },
+                            maxLength: { value: 50, message: '请假去向不能超过50个字符' }
+                          })}
+                          className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                            errors.destination ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                          } focus:border-transparent focus:outline-none focus:ring-2`}
+                          placeholder="例如：医院、学院等"
+                        />
+                      </FormField>
+                    )}
 
                     <FormField label="批假人" icon={FaUserTie} error={errors.approver}>
                       <input
