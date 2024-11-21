@@ -99,7 +99,7 @@ const CancelLeave = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-white py-8">
         <div className="container max-w-2xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
