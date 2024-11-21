@@ -165,7 +165,7 @@ const Home = () => {
     { header: '姓名', accessor: 'user_name' },
     { header: '请假事由', accessor: 'leave_type', hideOnMobile: false },
     { header: '去向', accessor: 'destination', hideOnMobile: false },
-    // { header: '起始时间', accessor: 'start_time', render: formatDate },
+    { header: '起始时间', accessor: 'start_time', render: formatDate },
     { header: '批假人', accessor: 'approver', hideOnMobile: false },
     { header: '预计返回时间', accessor: 'expected_return_time', hideOnMobile: false, render: formatDate },
   ];
