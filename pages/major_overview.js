@@ -8,7 +8,22 @@ import { toast } from 'react-toastify';
 import Card from '../components/Card';
 import { useRouter } from 'next/router';
 
-const MajorCard = ({ data, animate = true, onClick }) => {
+// 防止重复触发 API 请求的防抖工具
+let isFetching = false;
+const fetchWithDebounce = async (fetchFunction) => {
+  if (isFetching) return;
+  isFetching = true;
+  try {
+    await fetchFunction();
+  } catch (err) {
+    console.error('Fetch error:', err);
+  } finally {
+    isFetching = false;
+  }
+};
+
+// MajorCard 组件优化，使用 React.memo 避免不必要的重新渲染
+const MajorCard = React.memo(({ data, animate = true, onClick }) => {
   const percentage = data.totalStudents
     ? ((data.presentStudents / data.totalStudents) * 100).toFixed(1)
     : 0;
@@ -21,7 +36,7 @@ const MajorCard = ({ data, animate = true, onClick }) => {
   };
 
   const cardContent = (
-    <div 
+    <div
       className="bg-white rounded-xl shadow-lg p-6 h-full cursor-pointer hover:shadow-xl transition-shadow"
       onClick={() => onClick && onClick(data.major)}
     >
@@ -89,7 +104,7 @@ const MajorCard = ({ data, animate = true, onClick }) => {
   ) : (
     <div className="h-full">{cardContent}</div>
   );
-};
+});
 
 const MajorOverview = () => {
   const [majorData, setMajorData] = useState([]);
@@ -100,6 +115,13 @@ const MajorOverview = () => {
 
   useEffect(() => {
     fetchMajorStatistics();
+
+    // 每 30 秒刷新一次数据
+    const interval = setInterval(() => {
+      fetchWithDebounce(fetchMajorStatistics);
+    }, 30000);
+
+    return () => clearInterval(interval); // 清除定时器
   }, []);
 
   // 获取专业统计数据
@@ -136,7 +158,7 @@ const MajorOverview = () => {
   const handleMajorClick = (major) => {
     router.push(`/major/${encodeURIComponent(major)}`);
   };
-  // 计算总体统计数据
+
   const overallStats = majorData.reduce(
     (acc, curr) => {
       acc.totalStudents += curr.totalStudents;
@@ -226,13 +248,8 @@ const MajorOverview = () => {
                 : 'space-y-4'
             }
           >
-            {filteredMajorData.map((item, index) => (
-                <MajorCard
-                key={item.major}
-                data={item}
-                animate={true}
-                onClick={handleMajorClick}
-                />
+            {filteredMajorData.map((item) => (
+              <MajorCard key={item.major} data={item} animate onClick={handleMajorClick} />
             ))}
           </div>
         )}
