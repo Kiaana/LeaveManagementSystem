@@ -137,15 +137,20 @@ const Dashboard = () => {
         }
     };
 
-    // 处理请假去向分布图表数据
+    // 处理请假去向分布图表数据，有什么数据就返回什么数据
     const getDestinationChartData = () => {
         if (!statistics?.by_destination?.current_leave) return [];
-        return [
-            { name: '三号院内', value: statistics.by_destination.current_leave['三号院内'] || 0 },
-            { name: '一号院', value: statistics.by_destination.current_leave['一号院'] || 0 },
-            { name: '921医院', value: statistics.by_destination.current_leave['921医院'] || 0 },
-            { name: '其他', value: statistics.by_destination.current_leave['其他'] || 0 },
-        ];
+        
+        return Object.keys(statistics.by_destination.current_leave).map((destination) => ({
+            name: destination,
+            value: statistics.by_destination.current_leave[destination],
+        }));
+        // return [
+        //     { name: '三号院内', value: statistics.by_destination.current_leave['三号院内'] || 0 },
+        //     { name: '一号院', value: statistics.by_destination.current_leave['一号院'] || 0 },
+        //     { name: '921医院', value: statistics.by_destination.current_leave['921医院'] || 0 },
+        //     { name: '其他', value: statistics.by_destination.current_leave['其他'] || 0 },
+        // ];
     };
 
     // 处理专业人数分布图表数据
