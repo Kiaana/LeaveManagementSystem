@@ -11,9 +11,24 @@ import FilterForm from '../components/FilterForm';
 import Card from '../components/Card';
 import Pagination from '../components/Pagination';
 
+// 防抖机制，避免重复请求
+let isFetching = false;
+const fetchWithDebounce = async (fetchFunction) => {
+  if (isFetching) return;
+  isFetching = true;
+  try {
+    await fetchFunction();
+  } catch (error) {
+    console.error('Fetch error:', error);
+  } finally {
+    isFetching = false;
+  }
+};
+
 const Overview = () => {
   const router = useRouter();
   const { query } = router;
+
   const [leaves, setLeaves] = useState([]);
   const [users, setUsers] = useState([]);
   const [filters, setFilters] = useState({
@@ -51,6 +66,14 @@ const Overview = () => {
     }
   }, [users, query]);
 
+  // 定时更新数据
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchWithDebounce(() => fetchLeaves(filters, currentPage));
+    }, 30000); // 每 30 秒刷新一次
+    return () => clearInterval(interval);
+  }, [filters, currentPage]);
+
   const fetchUsers = async () => {
     try {
       const res = await axiosInstance.get('/users');
@@ -65,13 +88,13 @@ const Overview = () => {
     setLoading(true);
     try {
       const params = { page, per_page: 10 };
-  
+
       Object.keys(currentFilters).forEach((key) => {
         if (currentFilters[key] !== '') {
           if (key === 'name') {
             const matchedUsers = users.filter((user) => user.name === currentFilters.name);
             if (matchedUsers.length > 0) {
-              params['user_id'] = matchedUsers[0].id; // 只取第一个匹配的用户
+              params['user_id'] = matchedUsers[0].id;
             } else {
               params['user_id'] = -1; // 没有匹配到用户
             }
@@ -80,18 +103,18 @@ const Overview = () => {
           }
         }
       });
-  
+
       const res = await axiosInstance.get('/leave_requests', { params });
-  
+
       setTotalPages(res.data.pages);
       setCurrentPage(res.data.current_page);
-  
+
       const resData = res.data.data.map((leave) => {
         const user = users.find((user) => user.id === leave.user_id);
         const userName = user ? user.name : '未知用户';
         return { ...leave, user_name: userName };
       });
-  
+
       setLeaves(resData);
     } catch (error) {
       console.error('Error fetching leaves:', error);
@@ -147,22 +170,22 @@ const Overview = () => {
       toast.error('没有数据可导出');
       return;
     }
-  
+
     const headers = ['姓名', '请假类型', '去向', '起始时间', '预计返回时间', '实际返回时间'];
-  
+
     const rows = leaves.map((leave) => [
-      leave.user_name || '未知用户', // 使用 user_name 确保获取到姓名
+      leave.user_name || '未知用户',
       leave.leave_type || '未提供',
       leave.destination || '未提供',
       formatDate(leave.start_time),
       formatDate(leave.expected_return_time),
       leave.actual_return_time ? formatDate(leave.actual_return_time) : '未销假',
     ]);
-  
+
     const csvContent = [headers, ...rows]
       .map((row) => row.map((cell) => `"${cell}"`).join(','))
       .join('\n');
-  
+
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -170,7 +193,7 @@ const Overview = () => {
     a.download = '请销假记录.csv';
     a.click();
     URL.revokeObjectURL(url);
-  
+
     toast.success('导出成功！');
   };
 
@@ -178,7 +201,7 @@ const Overview = () => {
   const formatDate = (value) => {
     if (!value) return '未提供时间';
     const utcDate = new Date(value);
-    const timeZoneOffset = utcDate.getTimezoneOffset() * 60000; // 转换为毫秒
+    const timeZoneOffset = utcDate.getTimezoneOffset() * 60000;
     const localDate = new Date(utcDate.getTime() - timeZoneOffset);
 
     const options = {
@@ -195,7 +218,7 @@ const Overview = () => {
 
   // 更新表格列定义
   const columns = [
-    { header: '姓名', accessor: 'user_name' }, // 使用 user_name
+    { header: '姓名', accessor: 'user_name' },
     { header: '请假类型', accessor: 'leave_type', hideOnMobile: false },
     { header: '去向', accessor: 'destination' },
     { header: '起始时间', accessor: 'start_time', render: (value) => formatDate(value) },
