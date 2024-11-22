@@ -34,7 +34,6 @@ const Home = () => {
   const [recentLeaves, setRecentLeaves] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingLeaves, setLoadingLeaves] = useState(true);
-  const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1); // 当前页码
   const [totalPages, setTotalPages] = useState(1); // 总页数
 
@@ -60,15 +59,8 @@ const Home = () => {
   // 初始加载时拉取数据
   useEffect(() => {
     fetchWithDebounce('statistics', fetchStatistics);
-    fetchUsers(); // 在fethRecentLeaves之前获取用户信息
     fetchWithDebounce('leaves', () => fetchRecentLeaves());
   }, []);
-
-  useEffect(() => {
-    if (users.length > 0) {
-      fetchWithDebounce('leaves', () => fetchRecentLeaves(currentPage));
-    }
-  }, [users]);
 
   // 定时更新数据
   useEffect(() => {
@@ -89,7 +81,6 @@ const Home = () => {
   }, [currentPage]);
 
   const fetchStatistics = async () => {
-    // setLoadingStats(true);
     try {
       const res = await axiosInstance.get('/statistics');
       const overallStats = res.data.overall;
@@ -106,18 +97,7 @@ const Home = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const res = await axiosInstance.get('/users');
-      setUsers(res.data.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('获取用户信息失败');
-    }
-  };
-
   const fetchRecentLeaves = async (page = 1) => {
-    // setLoadingLeaves(true);
     try {
       const res = await axiosInstance.get('/leave_requests', {
         params: {
@@ -146,9 +126,8 @@ const Home = () => {
           status = 'overdue';
         }
 
-        // 匹配用户姓名
-        const user = users.find((u) => u.id === leave.user_id);
-        const userName = user ? user.name : '未知用户';
+        // 直接获取用户姓名
+        const userName = leave.user ? leave.user.name : '未知用户';
 
         return { ...leave, status, user_name: userName };
       });
