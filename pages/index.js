@@ -72,15 +72,15 @@ const Home = () => {
 
   // 定时更新数据
   useEffect(() => {
-    // 每半分钟更新统计数据
+    // 每20s更新统计数据
     const statsInterval = setInterval(() => {
       fetchWithDebounce('statistics', fetchStatistics);
-    }, 30000);
+    }, 20000);
 
-    // 每半分钟更新请销假记录
+    // 每20s更新请销假记录
     const leavesInterval = setInterval(() => {
       fetchWithDebounce('leaves', () => fetchRecentLeaves(currentPage));
-    }, 30000);
+    }, 20000);
 
     return () => {
       clearInterval(statsInterval);

@@ -116,10 +116,10 @@ const MajorOverview = () => {
   useEffect(() => {
     fetchMajorStatistics();
 
-    // 每 30 秒刷新一次数据
+    // 每 20 秒刷新一次数据
     const interval = setInterval(() => {
       fetchWithDebounce(fetchMajorStatistics);
-    }, 30000);
+    }, 20000);
 
     return () => clearInterval(interval); // 清除定时器
   }, []);

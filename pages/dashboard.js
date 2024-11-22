@@ -150,7 +150,7 @@ const Dashboard = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentTime(dayjs());
-        }, 10000); // 每分钟更新时间
+        }, 10000); // 每10s更新时间
         return () => clearInterval(interval);
     }, []);
 
@@ -161,18 +161,18 @@ const Dashboard = () => {
         fetchWithDebounce(fetchDutyInfo, isFetchingDutyInfo);
         fetchWithDebounce(fetchWeather, isFetchingWeather);
 
-        // 定时更新数据，每 30 秒请求一次
+        // 定时更新数据，每 20 秒请求一次
         const statsInterval = setInterval(() => {
             fetchWithDebounce(fetchStatistics, isFetchingStats);
-        }, 30000);
+        }, 20000);
 
         const dutyInfoInterval = setInterval(() => {
             fetchWithDebounce(fetchDutyInfo, isFetchingDutyInfo);
-        }, 30000);
+        }, 20000);
 
         const weatherInterval = setInterval(() => {
             fetchWithDebounce(fetchWeather, isFetchingWeather);
-        }, 30000);
+        }, 20000);
 
         return () => {
             clearInterval(statsInterval);

@@ -70,7 +70,7 @@ const Overview = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchWithDebounce(() => fetchLeaves(filters, currentPage));
-    }, 30000); // 每 30 秒刷新一次
+    }, 20000); // 每 20 秒刷新一次
     return () => clearInterval(interval);
   }, [filters, currentPage]);
 
