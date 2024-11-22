@@ -249,13 +249,15 @@ const Dashboard = () => {
 
     // 处理专业人数分布图表数据
     const getMajorChartData = () => {
-        if (!statistics?.by_major) return [];
-        return Object.keys(statistics.by_major.total_students).map(major => ({
+    if (!statistics?.by_major) return [];
+    return Object.keys(statistics.by_major.total_students)
+        .map(major => ({
             name: major,
             总人数: statistics.by_major.total_students[major],
             请假人数: statistics.by_major.current_leave[major] || 0,
-        }));
-    };
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+};
 
     // 获取专业进度条的颜色
     const getProgressColor = (percentage) => {
