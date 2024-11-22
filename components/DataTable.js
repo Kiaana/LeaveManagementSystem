@@ -1,5 +1,6 @@
 // components/DataTable.js
 import React from 'react';
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { FaSpinner } from 'react-icons/fa';
 
@@ -124,4 +125,4 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
   );
 };
 
-export default DataTable;
+export default memo(DataTable);

@@ -89,7 +89,7 @@ const Home = () => {
   }, [currentPage]);
 
   const fetchStatistics = async () => {
-    setLoadingStats(true);
+    // setLoadingStats(true);
     try {
       const res = await axiosInstance.get('/statistics');
       const overallStats = res.data.overall;
@@ -117,7 +117,7 @@ const Home = () => {
   };
 
   const fetchRecentLeaves = async (page = 1) => {
-    setLoadingLeaves(true);
+    // setLoadingLeaves(true);
     try {
       const res = await axiosInstance.get('/leave_requests', {
         params: {
