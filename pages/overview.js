@@ -85,7 +85,7 @@ const Overview = () => {
   };
 
   const fetchLeaves = async (currentFilters = filters, page = 1) => {
-    setLoading(true);
+    // setLoading(true);
     try {
       const params = { page, per_page: 10 };
 

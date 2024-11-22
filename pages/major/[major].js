@@ -136,7 +136,7 @@ const MajorDetail = () => {
                       <div className="space-y-4">
                         <div className="flex items-center bg-gray-50 p-3 rounded-lg">
                           <FaClock className="mr-3 text-blue-500" />
-                          <span className="font-medium">请假类型: {user.active_leave.leave_type}</span>
+                          <span className="font-medium">请假事由: {user.active_leave.leave_type}</span>
                         </div>
                 
                         {/* Timeline and Additional Info */}
