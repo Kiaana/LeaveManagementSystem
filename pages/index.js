@@ -60,8 +60,8 @@ const Home = () => {
   // 初始加载时拉取数据
   useEffect(() => {
     fetchWithDebounce('statistics', fetchStatistics);
+    fetchUsers(); // 在fethRecentLeaves之前获取用户信息
     fetchWithDebounce('leaves', () => fetchRecentLeaves());
-    fetchUsers();
   }, []);
 
   useEffect(() => {
