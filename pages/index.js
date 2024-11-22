@@ -1,5 +1,5 @@
 // pages/index.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axiosInstance from '../services/axiosConfig';
 import PageTransition from '../components/PageTransition';
 import { FaSpinner, FaUserClock, FaCheckCircle, FaExclamationCircle, FaHistory, FaUserCheck } from 'react-icons/fa';
@@ -9,20 +9,6 @@ import { motion } from 'framer-motion';
 import DataTable from '../components/DataTable';
 import Card from '../components/Card';
 import Pagination from '../components/Pagination';
-
-// 防止多次触发 API 调用的防抖工具
-let isFetching = false;
-const fetchWithDebounce = async (fetchFunction) => {
-  if (isFetching) return;
-  isFetching = true;
-  try {
-    await fetchFunction();
-  } catch (err) {
-    console.error('Fetch error:', err);
-  } finally {
-    isFetching = false;
-  }
-};
 
 // 卡片组件，使用 React.memo 优化
 const StatCard = React.memo(({ icon: Icon, title, value, loading, bgColor, iconColor, href }) => (
@@ -52,15 +38,35 @@ const Home = () => {
   const [currentPage, setCurrentPage] = useState(1); // 当前页码
   const [totalPages, setTotalPages] = useState(1); // 总页数
 
+  // 使用 useRef 管理多个 isFetching 标志
+  const isFetchingRef = useRef({
+    statistics: false,
+    leaves: false,
+  });
+
+  // 防止多次触发 API 调用的防抖工具
+  const fetchWithDebounce = async (key, fetchFunction) => {
+    if (isFetchingRef.current[key]) return;
+    isFetchingRef.current[key] = true;
+    try {
+      await fetchFunction();
+    } catch (err) {
+      console.error(`Fetch error for ${key}:`, err);
+    } finally {
+      isFetchingRef.current[key] = false;
+    }
+  };
+
   // 初始加载时拉取数据
   useEffect(() => {
-    fetchStatistics();
+    fetchWithDebounce('statistics', fetchStatistics);
+    fetchWithDebounce('leaves', () => fetchRecentLeaves());
     fetchUsers();
   }, []);
 
   useEffect(() => {
     if (users.length > 0) {
-      fetchRecentLeaves();
+      fetchWithDebounce('leaves', () => fetchRecentLeaves(currentPage));
     }
   }, [users]);
 
@@ -68,13 +74,13 @@ const Home = () => {
   useEffect(() => {
     // 每半分钟更新统计数据
     const statsInterval = setInterval(() => {
-      fetchWithDebounce(fetchStatistics);
-    }, 30000);
+      fetchWithDebounce('statistics', fetchStatistics);
+    }, 20000);
 
     // 每半分钟更新请销假记录
     const leavesInterval = setInterval(() => {
-      fetchWithDebounce(() => fetchRecentLeaves(currentPage));
-    }, 30000);
+      fetchWithDebounce('leaves', () => fetchRecentLeaves(currentPage));
+    }, 20000);
 
     return () => {
       clearInterval(statsInterval);
@@ -83,10 +89,11 @@ const Home = () => {
   }, [currentPage]);
 
   const fetchStatistics = async () => {
+    setLoadingStats(true);
     try {
       const res = await axiosInstance.get('/statistics');
       const overallStats = res.data.overall;
-  
+
       // 更新统计数据
       setStatistics({
         ...overallStats,
@@ -110,6 +117,7 @@ const Home = () => {
   };
 
   const fetchRecentLeaves = async (page = 1) => {
+    setLoadingLeaves(true);
     try {
       const res = await axiosInstance.get('/leave_requests', {
         params: {
@@ -274,7 +282,7 @@ const Home = () => {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={(page) => fetchRecentLeaves(page)}
+              onPageChange={(page) => fetchWithDebounce('leaves', () => fetchRecentLeaves(page))}
             />
           </Card>
         </div>
