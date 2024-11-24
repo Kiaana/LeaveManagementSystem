@@ -17,7 +17,6 @@ import {
 import FormField from '../../components/FormField';
 import Button from '../../components/Button';
 import { motion } from 'framer-motion';
-import useUsers from '../../hooks/useUsers';
 
 const EditLeave = () => {
   const router = useRouter();
@@ -27,102 +26,125 @@ const EditLeave = () => {
     handleSubmit, 
     formState: { errors }, 
     setValue, 
-    watch, 
-    reset,
+    watch,
     setError,
     clearErrors 
   } = useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const { users } = useUsers();
-  const [userId, setUserId] = useState(null);
-  const [nameValidated, setNameValidated] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [leaveData, setLeaveData] = useState(null);
 
   const startTime = watch('start_time');
   const destinationType = watch('destination_type');
 
   useEffect(() => {
-    if (id && users.length > 0) {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await axiosInstance.get('/user');
+        setCurrentUser(res.data);
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          router.push('/login');
+        } else {
+          console.error('Error fetching current user:', error);
+          toast.error('无法获取用户信息，请稍后再试。');
+        }
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    fetchCurrentUser();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchLeave = async () => {
+      try {
+        const res = await axiosInstance.get(`/leave_requests/${id}`);
+        const data = res.data;
+
+        // 检查权限
+        if (currentUser.role !== 'admin' && data.user_id !== currentUser.id) {
+          toast.error('您无权编辑此请假记录');
+          router.push('/overview');
+          return;
+        }
+
+        // 将UTC时间换算为本地时间显示
+        const startTime = new Date(data.start_time);
+        const expectedReturnTime = new Date(data.expected_return_time);
+
+        // 本地时间
+        const localStartTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000);
+        const localExpectedReturnTime = new Date(expectedReturnTime.getTime() - expectedReturnTime.getTimezoneOffset() * 60000);
+
+        // 格式化本地时间为 'YYYY-MM-DDTHH:mm'
+        const formatLocalTime = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+
+        setValue('name', data.user.name);
+        setValue('leave_type', data.leave_type);
+        setValue('approver', data.approver);
+        setValue('start_time', formatLocalTime(localStartTime));
+        setValue('expected_return_time', formatLocalTime(localExpectedReturnTime));
+
+        // 设置 destination_type 和 destination
+        if (data.destination_type) {
+          setValue('destination_type', data.destination_type);
+          if (data.destination_type === '其他' || data.destination_type === '三号院内') {
+            setValue('destination', data.destination);
+          }
+        } else {
+          if (data.destination === '一号院' || data.destination === '921医院') {
+            setValue('destination_type', data.destination);
+          } else if (data.destination === '三号院内') {
+            setValue('destination_type', '三号院内');
+            setValue('destination', data.destination);
+          } else {
+            setValue('destination_type', '其他');
+            setValue('destination', data.destination);
+          }
+        }
+
+        setLeaveData(data);
+      } catch (error) {
+        console.error('Error fetching leave request:', error);
+        toast.error('获取请假信息失败');
+        router.push('/overview');
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    if (id && currentUser) {
       fetchLeave();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, users]);
+  }, [id, currentUser, router, setValue]);
 
   useEffect(() => {
     if (destinationType === '一号院') {
       setValue('destination', '一号院');
     } else if (destinationType === '921医院') {
       setValue('destination', '921医院');
-    } else {
+    } else if (destinationType !== '其他' && destinationType !== '三号院内') {
       setValue('destination', '');
     }
   }, [destinationType, setValue]);
 
-  const fetchLeave = async () => {
-    try {
-      const res = await axiosInstance.get(`/leave_requests/${id}`);
-      const data = res.data;
-
-      // 获取用户姓名
-      const user = users.find(user => user.id === data.user_id);
-      const userName = user ? user.name : '未知用户';
-
-      // 将UTC时间换算为本地时间显示
-      const startTime = new Date(data.start_time);
-      const expectedReturnTime = new Date(data.expected_return_time);
-      
-      // 本地时间
-      const localStartTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000);
-      const localExpectedReturnTime = new Date(expectedReturnTime.getTime() - expectedReturnTime.getTimezoneOffset() * 60000);
-
-      // 格式化本地时间为 'YYYY-MM-DDTHH:mm'
-      const formatLocalTime = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-      };
-
-      data.start_time = formatLocalTime(localStartTime);
-      data.expected_return_time = formatLocalTime(localExpectedReturnTime);
-
-      setValue('name', userName);
-      setValue('leave_type', data.leave_type);
-      setValue('destination', data.destination);
-      setValue('approver', data.approver);
-      setValue('start_time', data.start_time);
-      setValue('expected_return_time', data.expected_return_time);
-
-      // 设置 destination_type
-      if (data.destination === '一号院' || data.destination === '921医院') {
-        setValue('destination_type', data.destination);
-      } else if (data.destination === '三号院内') {
-        setValue('destination_type', '三号院内');
-      } else {
-        setValue('destination_type', '其他');
-      }
-
-      setUserId(data.user_id);
-      setNameValidated(true);
-    } catch (error) {
-      console.error('Error fetching leave request:', error);
-      toast.error('获取请假信息失败');
-    } finally {
-      setFetching(false);
-    }
-  };
-
   const onSubmit = async (data) => {
-    if (!userId) {
-      setError('name', { type: 'manual', message: '请输入有效的姓名' });
-      return;
-    }
     setLoading(true);
+
+    // 转换时间为 ISO 格式
     data.start_time = new Date(data.start_time).toISOString();
     data.expected_return_time = new Date(data.expected_return_time).toISOString();
-    data.user_id = userId;
 
     // 根据 destination_type 设置 destination
     if (data.destination_type === '一号院' || data.destination_type === '921医院') {
@@ -154,7 +176,7 @@ const EditLeave = () => {
               编辑请假信息
             </h1>
 
-            {fetching ? (
+            {(loadingUser || fetching) ? (
               <div className="flex justify-center">
                 <FaSpinner className="animate-spin text-gray-500 text-3xl" />
               </div>
@@ -164,7 +186,7 @@ const EditLeave = () => {
                 <FormField label="姓名" icon={FaUser} error={errors.name}>
                   <input
                     type="text"
-                    {...register('name', { required: '请输入姓名' })}
+                    {...register('name')}
                     className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none bg-gray-100"
                     placeholder="请输入您的姓名"
                     readOnly // 设置为只读
@@ -267,7 +289,7 @@ const EditLeave = () => {
 
                 {/* 提交按钮 */}
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-                  <Button type="submit" disabled={loading || errors.submit || !nameValidated} variant="primary">
+                  <Button type="submit" disabled={loading} variant="primary">
                     {loading ? (
                       <>
                         <FaSpinner className="animate-spin mr-2" />
