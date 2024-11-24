@@ -4,86 +4,106 @@ import axiosInstance from '../services/axiosConfig';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import PageTransition from '../components/PageTransition';
-import { FaSpinner, FaUser, FaCalendarAlt, FaClipboard } from 'react-icons/fa';
+import { FaSpinner, FaCalendarAlt, FaClipboard } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
-import useUsers from '../hooks/useUsers'; // 引入自定义 Hook
+import { useRouter } from 'next/router';
 
 const CancelLeave = () => {
-  const { register, handleSubmit, formState: { errors }, reset, watch, setError, clearErrors } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset, watch, setError } = useForm();
   const [loading, setLoading] = useState(false);
-  const { users, loadingUsers } = useUsers(); // 使用自定义 Hook
-  const [userId, setUserId] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [loadingLeave, setLoadingLeave] = useState(true);
+  const [user, setUser] = useState(null);
   const [pendingLeave, setPendingLeave] = useState(null);
+  const router = useRouter();
 
-  const name = watch('name');
   const actualReturnTime = watch('actual_return_time');
 
   useEffect(() => {
-    if (name && users.length > 0) {
-      validateUserName(name);
-    } else {
-      setUserId(null);
-      setPendingLeave(null);
-      clearErrors('submit');
-    }
-  }, [name, users]);
-
-  const validateUserName = (enteredName) => {
-    const matchedUser = users.find(user => user.name === enteredName.trim());
-    if (matchedUser) {
-      setUserId(matchedUser.id);
-      clearErrors('name');
-      fetchPendingLeave(matchedUser.id);
-    } else {
-      setUserId(null);
-      setPendingLeave(null);
-      setError('name', { type: 'manual', message: '该姓名未在系统中注册' });
-    }
-  };
-
-  const fetchPendingLeave = async (userId) => {
-    try {
-      const res = await axiosInstance.get('/leave_requests', {
-        params: {
-          user_id: userId,
-          is_cancelled: 'false',
-        },
-      });
-      if (res.data.total === 0) {
-        toast.error('您目前没有未销假的请假记录，无需销假。');
-        setPendingLeave(null);
-        setError('submit', { type: 'manual', message: '没有未销假记录' });
-      } else {
-        const leave = res.data.data[0];
-        setPendingLeave(leave);
-        clearErrors('submit');
+    const fetchUser = async () => {
+      try {
+        const res = await axiosInstance.get('/user');
+        setUser(res.data);
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          router.push('/login');
+        } else {
+          console.error('Error fetching user:', error);
+          toast.error('无法获取用户信息，请稍后再试。');
+        }
+      } finally {
+        setLoadingUser(false);
       }
-    } catch (error) {
-      console.error('Error fetching pending leave:', error);
-      toast.error('无法获取您的请假信息，请稍后再试。');
+    };
+
+    fetchUser();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchPendingLeave = async () => {
+      try {
+        const res = await axiosInstance.get('/leave_requests', {
+          params: {
+            is_cancelled: 'false',
+          },
+        });
+        if (res.data.total === 0) {
+          toast.error('您目前没有未销假的请假记录，无需销假。');
+          setPendingLeave(null);
+        } else {
+          const leave = res.data.data[0];
+
+          // 正确的时间转换逻辑
+          const startTime = new Date(leave.start_time);
+          const expectedReturnTime = new Date(leave.expected_return_time);
+
+          // 将 UTC 时间转换为本地时间
+          const localStartTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000);
+          const localExpectedReturnTime = new Date(expectedReturnTime.getTime() - expectedReturnTime.getTimezoneOffset() * 60000);
+
+          // 格式化本地时间为 'YYYY-MM-DD HH:mm'
+          const formatLocalTime = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+          };
+
+          // 将格式化后的时间添加到 leave 对象中
+          leave.formatted_start_time = formatLocalTime(localStartTime);
+          leave.formatted_expected_return_time = formatLocalTime(localExpectedReturnTime);
+
+          setPendingLeave(leave);
+        }
+      } catch (error) {
+        console.error('Error fetching pending leave:', error);
+        toast.error('无法获取您的请假信息，请稍后再试。');
+      } finally {
+        setLoadingLeave(false);
+      }
+    };
+
+    if (user) {
+      fetchPendingLeave();
     }
-  };
+  }, [user]);
 
   const onSubmit = async (data) => {
-    if (!userId) {
-      setError('name', { type: 'manual', message: '请输入有效的姓名' });
-      return;
-    }
     if (!pendingLeave) {
       setError('submit', { type: 'manual', message: '没有未销假记录' });
       return;
     }
     setLoading(true);
     data.actual_return_time = new Date(data.actual_return_time).toISOString();
-    data.user_id = userId;
 
     try {
       await axiosInstance.post('/cancel_leave', data);
       toast.success('销假成功');
       reset();
-      setUserId(null);
       setPendingLeave(null);
     } catch (error) {
       console.error('Error submitting cancellation:', error);
@@ -110,89 +130,84 @@ const CancelLeave = () => {
               销假信息填报
             </h1>
 
-            {loadingUsers ? (
+            {(loadingUser || loadingLeave) ? (
               <div className="flex justify-center">
                 <FaSpinner className="animate-spin text-gray-500 text-3xl" />
               </div>
-            ) : (
+            ) : pendingLeave ? (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <FormField label="姓名" icon={FaUser} error={errors.name}>
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold text-gray-700">待销假记录</h2>
+                  <p className="text-gray-600">
+                    请假类型: <span className="font-medium">{pendingLeave.leave_type}</span>
+                  </p>
+                  <p className="text-gray-600">
+                    请假去向: <span className="font-medium">{pendingLeave.destination}</span>
+                  </p>
+                  <p className="text-gray-600">
+                    请假时间: {pendingLeave.formatted_start_time} 至 {pendingLeave.formatted_expected_return_time}
+                  </p>
+                </div>
+
+                <FormField label="销假方式" icon={FaClipboard} error={errors.cancellation_method}>
                   <input
                     type="text"
-                    {...register('name', { 
-                      required: '请输入姓名',
-                      minLength: { value: 2, message: '姓名至少2个字符' },
-                      maxLength: { value: 20, message: '姓名不能超过20个字符' },
-                      pattern: { value: /^[\u4e00-\u9fa5·]+$/, message: '姓名只能包含中文字符' }
+                    {...register('cancellation_method', {
+                      required: '请输入销假方式',
+                      minLength: { value: 2, message: '销假方式至少2个字符' },
+                      maxLength: { value: 50, message: '销假方式不能超过50个字符' }
                     })}
                     className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                      errors.name ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                      errors.cancellation_method ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                     } focus:border-transparent focus:outline-none focus:ring-2`}
-                    placeholder="请输入您的姓名"
+                    placeholder="例如：教导员处当面销假、微信销假等"
                   />
                 </FormField>
 
-                {pendingLeave && (
-                  <>
-                    <FormField label="销假方式" icon={FaClipboard} error={errors.cancellation_method}>
-                      <input
-                        type="text"
-                        {...register('cancellation_method', { 
-                          required: '请输入销假方式',
-                          minLength: { value: 2, message: '销假方式至少2个字符' },
-                          maxLength: { value: 50, message: '销假方式不能超过50个字符' }
-                        })}
-                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                          errors.cancellation_method ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                        } focus:border-transparent focus:outline-none focus:ring-2`}
-                        placeholder="例如：教导员处当面销假、微信销假等"
-                      />
-                    </FormField>
-
-                    <FormField label="实际返回时间" icon={FaCalendarAlt} error={errors.actual_return_time}>
-                      <input
-                        type="datetime-local"
-                        {...register('actual_return_time', { 
-                          required: '请选择实际返回时间',
-                          validate: value => {
-                            const start = new Date(pendingLeave.start_time);
-                            const selectedTime = new Date(value);
-                            const now = new Date();
-                            if (selectedTime < start) {
-                              return '实际返回时间不能早于出发时间';
-                            }
-                            if (selectedTime > now) {
-                              return '实际返回时间不能晚于当前时间';
-                            }
-                            return true;
-                          }
-                        })}
-                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                          errors.actual_return_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                        } focus:border-transparent focus:outline-none focus:ring-2`}
-                      />
-                    </FormField>
-                  </>
-                )}
+                <FormField label="实际返回时间" icon={FaCalendarAlt} error={errors.actual_return_time}>
+                  <input
+                    type="datetime-local"
+                    {...register('actual_return_time', {
+                      required: '请选择实际返回时间',
+                      validate: value => {
+                        const start = new Date(pendingLeave.start_time);
+                        const selectedTime = new Date(value);
+                        const now = new Date();
+                        if (selectedTime < start) {
+                          return '实际返回时间不能早于出发时间';
+                        }
+                        if (selectedTime > now) {
+                          return '实际返回时间不能晚于当前时间';
+                        }
+                        return true;
+                      }
+                    })}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
+                      errors.actual_return_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:border-transparent focus:outline-none focus:ring-2`}
+                  />
+                </FormField>
 
                 {errors.submit && (
                   <p className="text-red-500 text-center">{errors.submit.message}</p>
                 )}
 
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-                  <Button type="submit" disabled={loading || errors.submit || !userId || !pendingLeave} variant="primary">
+                  <Button type="submit" disabled={loading || errors.submit} variant="primary">
                     {loading ? (
                       <>
                         <FaSpinner className="animate-spin mr-2" />
                         提交中...
                       </>
-                    ) : '提交信息'}
+                    ) : '提交销假'}
                   </Button>
                   <Button type="button" onClick={() => reset()} variant="secondary">
                     重置表单
                   </Button>
                 </div>
               </form>
+            ) : (
+              <p className="text-center text-gray-600">您目前没有未销假的请假记录。</p>
             )}
           </motion.div>
         </div>

@@ -46,10 +46,9 @@ const MajorDetail = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get('/users', {
+      const res = await axiosInstance.get('/users/on_leave', {
         params: {
           major: decodeURIComponent(major),
-          detail: true
         }
       });
       setUsers(res.data.data);
