@@ -1,82 +1,63 @@
 // services/axiosConfig.js
 import axios from 'axios';
-
-// 公开路由列表 - 与 AuthContext 保持一致
-const PUBLIC_ROUTES = [
-  '/login',
-  '/',
-  '/major_overview',
-  '/major/[major]',
-  '/duty_info',
-  '/overview',
-];
+import { tokenStorage } from '../utils/tokenStorage';
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     'Content-Type': 'application/json',
-  },
-  withCredentials: true,
+  }
 });
 
-// 判断是否是公开路由
-const isPublicRoute = (path) => {
-  return PUBLIC_ROUTES.some(route => {
-    // 移除 baseURL，只比较路径部分
-    const urlPath = path.replace(process.env.NEXT_PUBLIC_API_URL, '');
-    return urlPath === route || urlPath.startsWith(route);
-  });
-};
-
-// 添加请求拦截器处理 cookies
+// 请求拦截器添加令牌
 axiosInstance.interceptors.request.use(
   (config) => {
-    // 确保每个请求都携带 credentials
-    config.withCredentials = true;
+    const token = tokenStorage.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// 响应拦截器
+// 响应拦截器处理令牌刷新
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // 判断请求类型
-    const isLoginRequest = originalRequest.url === '/login';
-    const isRefreshRequest = originalRequest.url === '/refresh';
-    const isPublicUrl = isPublicRoute(originalRequest.url);
-
-    // 如果是公开路由，直接返回错误
-    if (isPublicUrl) {
-      return Promise.reject(error);
-    }
-
-    // 如果是401错误且不是重试请求且不是登录或刷新请求
-    if (error.response?.status === 401 
-        && !originalRequest._retry 
-        && !isLoginRequest 
-        && !isRefreshRequest) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const refreshResponse = await axiosInstance.post('/refresh', {});
+        const refreshToken = tokenStorage.getRefreshToken();
+        if (!refreshToken) {
+          throw new Error('No refresh token');
+        }
 
-        if (refreshResponse.status === 200) {
-          return axiosInstance(originalRequest);
-        }
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/refresh`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${refreshToken}`
+            }
+          }
+        );
+
+        const { access_token } = response.data;
+        tokenStorage.setToken(access_token);
+        
+        // 重试原始请求
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return axiosInstance(originalRequest);
       } catch (refreshError) {
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-        }
+        tokenStorage.clearAll();
+        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
   }
 );
