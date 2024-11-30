@@ -4,7 +4,7 @@ import axiosInstance from '../services/axiosConfig';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import PageTransition from '../components/PageTransition';
-import { FaSpinner, FaCalendarAlt, FaClipboard } from 'react-icons/fa';
+import { FaSpinner, FaClipboard } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
@@ -26,6 +26,7 @@ const CancelLeaveContent = () => {
         const res = await axiosInstance.get('/leave_requests', {
           params: {
             is_cancelled: 'false',
+            user_id: user.id,
           },
         });
         if (res.data.total === 0) {
