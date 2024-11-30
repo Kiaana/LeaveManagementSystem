@@ -12,7 +12,7 @@ const FilterForm = ({ filters, handleChange, handleSubmit, handleReset }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 transition-all duration-300">
       {/* 筛选头部 */}
-      <div 
+      <div
         className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
         onClick={toggleExpanded}
       >
@@ -20,19 +20,19 @@ const FilterForm = ({ filters, handleChange, handleSubmit, handleReset }) => {
           <FiFilter className="text-gray-600" />
           <h2 className="text-lg font-medium text-gray-700">筛选条件</h2>
           <span className="text-sm text-gray-500">
-            {Object.values(filters).filter(Boolean).length > 0 && 
+            {Object.values(filters).filter(Boolean).length > 0 &&
               `(${Object.values(filters).filter(Boolean).length} 个筛选条件)`
             }
           </span>
         </div>
-        {isExpanded ? 
-          <FiChevronUp className="text-gray-400" /> : 
+        {isExpanded ?
+          <FiChevronUp className="text-gray-400" /> :
           <FiChevronDown className="text-gray-400" />
         }
       </div>
 
       {/* 筛选表单 */}
-      <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[800px]' : 'max-h-0'}`}>
+      <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[1200px]' : 'max-h-0'}`}>
         <form onSubmit={handleSubmit} className="p-4 border-t border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 姓名 */}
@@ -195,17 +195,17 @@ const FilterForm = ({ filters, handleChange, handleSubmit, handleReset }) => {
           </div>
 
           {/* 操作按钮 */}
-          <div className="flex justify-end mt-6 space-x-3">
+          <div className="flex flex-col sm:flex-row justify-end mt-6 space-y-3 sm:space-y-0 sm:space-x-3">
             <button
               type="button"
               onClick={handleReset}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
             >
               重置
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
               应用筛选
             </button>
