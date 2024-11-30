@@ -17,56 +17,37 @@ import {
 import FormField from '../../components/FormField';
 import Button from '../../components/Button';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
-const EditLeave = () => {
+const EditLeaveContent = () => {
   const router = useRouter();
   const { id } = router.query;
+  const { user } = useAuth();
   const { 
     register, 
     handleSubmit, 
     formState: { errors }, 
     setValue, 
     watch,
-    setError,
-    clearErrors 
   } = useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
   const [leaveData, setLeaveData] = useState(null);
 
   const startTime = watch('start_time');
   const destinationType = watch('destination_type');
 
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const res = await axiosInstance.get('/user');
-        setCurrentUser(res.data);
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
-          router.push('/login');
-        } else {
-          console.error('Error fetching current user:', error);
-          toast.error('无法获取用户信息，请稍后再试。');
-        }
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-
-    fetchCurrentUser();
-  }, [router]);
-
-  useEffect(() => {
     const fetchLeave = async () => {
+      if (!id || !user) return;
+      
       try {
         const res = await axiosInstance.get(`/leave_requests/${id}`);
         const data = res.data;
 
         // 检查权限
-        if (currentUser.role !== 'admin' && data.user_id !== currentUser.id) {
+        if (user.role !== 'admin' && data.user_id !== user.id) {
           toast.error('您无权编辑此请假记录');
           router.push('/overview');
           return;
@@ -124,10 +105,8 @@ const EditLeave = () => {
       }
     };
 
-    if (id && currentUser) {
-      fetchLeave();
-    }
-  }, [id, currentUser, router, setValue]);
+    fetchLeave();
+  }, [id, user, router, setValue]);
 
   useEffect(() => {
     if (destinationType === '一号院') {
@@ -176,7 +155,7 @@ const EditLeave = () => {
               编辑请假信息
             </h1>
 
-            {(loadingUser || fetching) ? (
+            {fetching ? (
               <div className="flex justify-center">
                 <FaSpinner className="animate-spin text-gray-500 text-3xl" />
               </div>
@@ -310,4 +289,10 @@ const EditLeave = () => {
   );
 };
 
-export default EditLeave;
+export default function EditLeavePage() {
+  return (
+    <ProtectedRoute>
+      <EditLeaveContent />
+    </ProtectedRoute>
+  );
+}

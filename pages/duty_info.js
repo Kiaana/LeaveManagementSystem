@@ -12,7 +12,6 @@ import {
 import FormField from '../components/FormField';
 import Button from '../components/Button';
 import { motion } from 'framer-motion';
-import useUsers from '../hooks/useUsers';
 
 const DutyInfo = () => {
   const { 
@@ -20,24 +19,26 @@ const DutyInfo = () => {
     handleSubmit, 
     formState: { errors }, 
     setValue, 
-    watch, 
-    reset,
-    setError,
-    clearErrors 
+    trigger,
+    reset
   } = useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const { users, loadingUsers } = useUsers(); // 使用自定义 Hook
-  const [nameValidated, setNameValidated] = useState(false);
 
-  const dutyOfficer = watch('duty_officer');
-  const dutyCadre = watch('duty_cadre');
-  const teamOnDuty = watch('team_on_duty');
+  // 新增的用户验证函数
+  const validateUserName = async (name) => {
+    try {
+      const response = await axiosInstance.get(`/is_user?name=${encodeURIComponent(name.trim())}`);
+      return response.data.exists || '该姓名未在用户列表中';
+    } catch (error) {
+      console.error('验证用户名失败:', error);
+      return '用户验证失败';
+    }
+  };
 
   useEffect(() => {
     fetchDutyInfo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [users]);
+  }, []);
 
   const fetchDutyInfo = async () => {
     try {
@@ -47,7 +48,9 @@ const DutyInfo = () => {
       setValue('duty_officer', data.duty_officer);
       setValue('duty_cadre', data.duty_cadre);
       setValue('team_on_duty', data.team_on_duty);
-      setNameValidated(true);
+      
+      // 触发表单验证
+      await trigger(['duty_cadre', 'team_on_duty']);
     } catch (error) {
       console.error('获取值班信息失败:', error);
       toast.error('获取值班信息失败');
@@ -56,16 +59,8 @@ const DutyInfo = () => {
     }
   };
 
-  const validateUserName = (name) => {
-    if (!users.find(user => user.name === name.trim())) {
-      return '该姓名未在用户列表中';
-    }
-    return true;
-  };
-
   const onSubmit = async (data) => {
     setLoading(true);
-
     try {
       await axiosInstance.put('/duty_info', data);
       toast.success('值班信息更新成功');
@@ -141,13 +136,8 @@ const DutyInfo = () => {
                   />
                 </FormField>
 
-                {errors.submit && (
-                  <p className="text-red-500 text-center">{errors.submit.message}</p>
-                )}
-
-                {/* 提交按钮 */}
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-                  <Button type="submit" disabled={loading || !nameValidated} variant="primary">
+                  <Button type="submit" disabled={loading} variant="primary">
                     {loading ? (
                       <>
                         <FaSpinner className="animate-spin mr-2" />

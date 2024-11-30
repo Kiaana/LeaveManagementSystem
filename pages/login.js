@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axiosInstance from '../services/axiosConfig';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/router';
@@ -13,15 +12,18 @@ const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const redirect = router.query.redirect || '/';
   const { login } = useAuth();
+
+  const redirect = router.query.redirect || '/';
+
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
       await login(data);
       toast.success('登录成功');
-      router.push(redirect);
+      // 使用 replace 而不是 push，避免浏览器历史堆栈出现登录页
+      router.replace(redirect);
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.response?.data?.error || '登录失败，请重试');

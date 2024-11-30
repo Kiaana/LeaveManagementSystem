@@ -71,7 +71,9 @@ const CancelLeaveContent = () => {
       return;
     }
     setLoading(true);
-    data.actual_return_time = new Date(data.actual_return_time).toISOString();
+    // data.actual_return_time = new Date(data.actual_return_time).toISOString();
+    // 销假时间为当前时间
+    data.actual_return_time = new Date().toISOString();
 
     try {
       await axiosInstance.post('/cancel_leave', data);
@@ -119,21 +121,20 @@ const CancelLeaveContent = () => {
                 </div>
 
                 <FormField label="销假方式" icon={FaClipboard} error={errors.cancellation_method}>
-                  <input
-                    type="text"
+                  <select
                     {...register('cancellation_method', {
-                      required: '请输入销假方式',
-                      minLength: { value: 2, message: '销假方式至少2个字符' },
-                      maxLength: { value: 50, message: '销假方式不能超过50个字符' }
+                      required: '请选择销假方式'
                     })}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                      errors.cancellation_method ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                    } focus:border-transparent focus:outline-none focus:ring-2`}
-                    placeholder="例如：教导员处当面销假、微信销假等"
-                  />
+                    className={`w-full pl-10 pr-10 py-2.5 rounded-lg border ${errors.cancellation_method ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                      } focus:border-transparent focus:outline-none focus:ring-2`}
+                  >
+                    <option value="">请选择销假方式</option>
+                    <option value="当面销假">当面销假</option>
+                    <option value="微信销假">微信销假</option>
+                  </select>
                 </FormField>
 
-                <FormField label="实际返回时间" icon={FaCalendarAlt} error={errors.actual_return_time}>
+                {/* <FormField label="实际返回时间" icon={FaCalendarAlt} error={errors.actual_return_time}>
                   <input
                     type="datetime-local"
                     {...register('actual_return_time', {
@@ -151,11 +152,10 @@ const CancelLeaveContent = () => {
                         return true;
                       }
                     })}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                      errors.actual_return_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                    } focus:border-transparent focus:outline-none focus:ring-2`}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.actual_return_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                      } focus:border-transparent focus:outline-none focus:ring-2`}
                   />
-                </FormField>
+                </FormField> */}
 
                 {errors.submit && (
                   <p className="text-red-500 text-center">{errors.submit.message}</p>

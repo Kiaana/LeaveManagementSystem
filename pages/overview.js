@@ -74,7 +74,6 @@ const Overview = () => {
   }, [filters, currentPage]);
 
   const fetchLeaves = async (currentFilters = filters, page = 1) => {
-    setLoading(true);
     try {
       const params = { page, per_page: 10 };
 
