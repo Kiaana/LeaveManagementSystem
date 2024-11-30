@@ -49,6 +49,7 @@ const MajorDetail = () => {
       const res = await axiosInstance.get('/users/on_leave', {
         params: {
           major: decodeURIComponent(major),
+          per_page: 30,
         }
       });
       setUsers(res.data.data);
