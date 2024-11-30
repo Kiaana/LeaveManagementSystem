@@ -50,6 +50,7 @@ const Navbar = () => {
         ...(user ? [
             { path: '/leave_request', icon: FaCalendarAlt, label: '请假登记' },
             { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假登记' },
+            { path: '/profile', icon: FaUserCircle, label: '个人信息' },
         ] : []),
     ];
 
