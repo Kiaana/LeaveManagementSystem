@@ -5,7 +5,6 @@ import { useRouter } from 'next/router';
 
 const AuthContext = createContext();
 
-// 不需要认证的路由列表
 const PUBLIC_ROUTES = [
   '/login',
   '/',
@@ -18,36 +17,52 @@ const PUBLIC_ROUTES = [
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const router = useRouter();
 
-  // 检查当前路由是否需要认证
   const isPublicRoute = (path) => {
     return PUBLIC_ROUTES.some(route => path === route || path.startsWith(route));
   };
 
-  const checkAuth = async () => {
-    // 如果是公开路由，不检查认证
-    if (isPublicRoute(router.pathname)) {
-      setLoading(false);
-      return;
-    }
-
+  // 恢复用户会话
+  const restoreSession = async () => {
     try {
       const response = await axiosInstance.get('/user');
       setUser(response.data);
     } catch (error) {
       setUser(null);
-      if (!isPublicRoute(router.pathname)) {
-        router.push(`/login?redirect=${encodeURIComponent(router.pathname)}`);
-      }
     } finally {
+      setInitialized(true);
       setLoading(false);
     }
   };
 
+  // 初始化时检查会话
   useEffect(() => {
+    restoreSession();
+  }, []);
+
+  // 路由变化时检查认证
+  useEffect(() => {
+    if (!initialized) return;
+
+    const checkAuth = async () => {
+      // 如果是公开路由，不检查认证
+      if (isPublicRoute(router.pathname)) {
+        setLoading(false);
+        return;
+      }
+
+      // 如果没有用户且不是公开路由，重定向到登录页
+      if (!user && !isPublicRoute(router.pathname)) {
+        router.push(`/login?redirect=${encodeURIComponent(router.pathname)}`);
+      }
+      
+      setLoading(false);
+    };
+
     checkAuth();
-  }, [router.pathname]);
+  }, [router.pathname, user, initialized]);
 
   const login = async (credentials) => {
     const response = await axiosInstance.post('/login', credentials);
@@ -66,7 +81,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
