@@ -28,6 +28,18 @@ const isPublicRoute = (path) => {
   });
 };
 
+// 添加请求拦截器处理 cookies
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // 确保每个请求都携带 credentials
+    config.withCredentials = true;
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // 响应拦截器
 axiosInstance.interceptors.response.use(
   (response) => response,
