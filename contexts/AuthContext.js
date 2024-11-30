@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 
 const AuthContext = createContext();
 
+// 公开路由列表
 const PUBLIC_ROUTES = [
   '/login',
   '/',
@@ -17,9 +18,9 @@ const PUBLIC_ROUTES = [
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
   const router = useRouter();
 
+  // 判断是否是公开路由
   const isPublicRoute = (path) => {
     return PUBLIC_ROUTES.some(route => path === route || path.startsWith(route));
   };
@@ -32,44 +33,47 @@ export function AuthProvider({ children }) {
     } catch (error) {
       setUser(null);
     } finally {
-      setInitialized(true);
       setLoading(false);
     }
   };
 
-  // 初始化时检查会话
+  // 初始化时总是检查会话
   useEffect(() => {
     restoreSession();
   }, []);
 
   // 路由变化时检查认证
   useEffect(() => {
-    if (!initialized) return;
-
     const checkAuth = async () => {
-      // 如果是公开路由，不检查认证
+      // 如果正在加载，不进行检查
+      if (loading) return;
+      
+      // 如果是公开路由，不需要重定向
       if (isPublicRoute(router.pathname)) {
-        setLoading(false);
         return;
       }
 
-      // 如果没有用户且不是公开路由，重定向到登录页
-      if (!user && !isPublicRoute(router.pathname)) {
+      // 非公开路由且未登录时重定向
+      if (!user) {
         router.push(`/login?redirect=${encodeURIComponent(router.pathname)}`);
       }
-      
-      setLoading(false);
     };
 
     checkAuth();
-  }, [router.pathname, user, initialized]);
+  }, [router.pathname, user, loading]);
 
+  // 登录方法
   const login = async (credentials) => {
-    const response = await axiosInstance.post('/login', credentials);
-    setUser(response.data.user);
-    return response.data;
+    try {
+      const response = await axiosInstance.post('/login', credentials);
+      setUser(response.data.user);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   };
 
+  // 登出方法
   const logout = async () => {
     try {
       await axiosInstance.post('/logout');
@@ -80,11 +84,34 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // 更新用户信息方法
+  const updateUser = (newUserData) => {
+    setUser(prevUser => ({
+      ...prevUser,
+      ...newUserData
+    }));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        loading, 
+        login, 
+        logout, 
+        updateUser, 
+        isPublicRoute 
+      }}
+    >
+      {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
