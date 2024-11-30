@@ -8,41 +8,20 @@ import { FaSpinner, FaCalendarAlt, FaClipboard } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
-import { useRouter } from 'next/router';
+import { useAuth } from '../contexts/AuthContext';
+import ProtectedRoute from '../components/ProtectedRoute';
 
-const CancelLeave = () => {
-  const { register, handleSubmit, formState: { errors }, reset, watch, setError } = useForm();
+const CancelLeaveContent = () => {
+  const { user } = useAuth();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const [loading, setLoading] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true);
   const [loadingLeave, setLoadingLeave] = useState(true);
-  const [user, setUser] = useState(null);
   const [pendingLeave, setPendingLeave] = useState(null);
-  const router = useRouter();
-
-  const actualReturnTime = watch('actual_return_time');
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await axiosInstance.get('/user');
-        setUser(res.data);
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
-          router.push('/login');
-        } else {
-          console.error('Error fetching user:', error);
-          toast.error('无法获取用户信息，请稍后再试。');
-        }
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
 
   useEffect(() => {
     const fetchPendingLeave = async () => {
+      if (!user) return;
+
       try {
         const res = await axiosInstance.get('/leave_requests', {
           params: {
@@ -55,15 +34,12 @@ const CancelLeave = () => {
         } else {
           const leave = res.data.data[0];
 
-          // 正确的时间转换逻辑
           const startTime = new Date(leave.start_time);
           const expectedReturnTime = new Date(leave.expected_return_time);
 
-          // 将 UTC 时间转换为本地时间
           const localStartTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000);
           const localExpectedReturnTime = new Date(expectedReturnTime.getTime() - expectedReturnTime.getTimezoneOffset() * 60000);
 
-          // 格式化本地时间为 'YYYY-MM-DD HH:mm'
           const formatLocalTime = (date) => {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -73,7 +49,6 @@ const CancelLeave = () => {
             return `${year}-${month}-${day} ${hours}:${minutes}`;
           };
 
-          // 将格式化后的时间添加到 leave 对象中
           leave.formatted_start_time = formatLocalTime(localStartTime);
           leave.formatted_expected_return_time = formatLocalTime(localExpectedReturnTime);
 
@@ -87,9 +62,7 @@ const CancelLeave = () => {
       }
     };
 
-    if (user) {
-      fetchPendingLeave();
-    }
+    fetchPendingLeave();
   }, [user]);
 
   const onSubmit = async (data) => {
@@ -107,11 +80,7 @@ const CancelLeave = () => {
       setPendingLeave(null);
     } catch (error) {
       console.error('Error submitting cancellation:', error);
-      if (error.response && error.response.data && error.response.data.error) {
-        toast.error(error.response.data.error);
-      } else {
-        toast.error('提交失败，请重试');
-      }
+      toast.error(error.response?.data?.error || '提交失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -130,7 +99,7 @@ const CancelLeave = () => {
               销假信息填报
             </h1>
 
-            {(loadingUser || loadingLeave) ? (
+            {loadingLeave ? (
               <div className="flex justify-center">
                 <FaSpinner className="animate-spin text-gray-500 text-3xl" />
               </div>
@@ -216,4 +185,10 @@ const CancelLeave = () => {
   );
 };
 
-export default CancelLeave;
+export default function CancelLeavePage() {
+  return (
+    <ProtectedRoute>
+      <CancelLeaveContent />
+    </ProtectedRoute>
+  );
+} 

@@ -7,23 +7,24 @@ import { FaSpinner, FaUser, FaLock } from 'react-icons/fa';
 import PageTransition from '../components/PageTransition';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const redirect = router.query.redirect || '/';
+  const { login } = useAuth();
 
   const onSubmit = async (data) => {
     setLoading(true);
-
     try {
-      await axiosInstance.post('/login', data);
+      await login(data);
       toast.success('登录成功');
-      router.push(redirect); // 登录成功后跳转
+      router.push(redirect);
     } catch (error) {
-      console.error('Error during login:', error);
-      toast.error(error.response?.data?.message || '登录失败，请重试');
+      console.error('Login error:', error);
+      toast.error(error.response?.data?.error || '登录失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -41,9 +42,8 @@ const Login = () => {
               <input
                 type="text"
                 {...register('student_id', { required: '请输入学号' })}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                  errors.student_id ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                }`}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.student_id ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                 placeholder="请输入您的学号"
               />
             </FormField>
@@ -52,9 +52,8 @@ const Login = () => {
               <input
                 type="password"
                 {...register('password', { required: '请输入密码' })}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${
-                  errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                }`}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                 placeholder="请输入您的密码"
               />
             </FormField>
