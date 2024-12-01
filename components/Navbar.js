@@ -12,7 +12,7 @@ import {
     FaCaretDown,
     FaBirthdayCake
 } from 'react-icons/fa';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { FiMenu } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,9 +20,18 @@ import { useAuth } from '../contexts/AuthContext';
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const [showDropdown, setShowDropdown] = useState(false);
     const router = useRouter();
     const { user, logout } = useAuth();
+
+    // 处理滚动效果
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // 导航项分组
     const mainNavItems = [
@@ -42,43 +51,22 @@ const Navbar = () => {
 
     // 下拉菜单组件
     const DropdownMenu = ({ items, title, icon: Icon }) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const menuRef = useRef(null);
-    
-        useEffect(() => {
-            const handleClickOutside = (event) => {
-                if (menuRef.current && !menuRef.current.contains(event.target)) {
-                    setIsOpen(false);
-                }
-            };
-    
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => {
-                document.removeEventListener('mousedown', handleClickOutside);
-            };
-        }, []);
-    
+        const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
         return (
             <div 
-                ref={menuRef}
                 className="relative" 
-                onMouseEnter={() => setIsOpen(true)}
-                onMouseLeave={() => setIsOpen(false)}
+                onMouseEnter={() => setIsDropdownOpen(true)}
+                onMouseLeave={() => setIsDropdownOpen(false)}
             >
-                <button 
-                    className="flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                    aria-expanded={isOpen}
-                >
+                <button className="flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50">
                     <Icon className="mr-2 text-lg" />
                     <span>{title}</span>
                     <FaCaretDown className="ml-1" />
                 </button>
-    
-                {isOpen && (
-                    <div 
-                        className="absolute left-0 mt-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
-                        onMouseEnter={() => setIsOpen(true)}
-                    >
+
+                {isDropdownOpen && (
+                    <div className="absolute left-0 mt-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                         <div className="py-1">
                             {items.map((item) => (
                                 <Link
@@ -96,6 +84,14 @@ const Navbar = () => {
             </div>
         );
     };
+
+    // 合并所有导航项用于移动端显示
+    const allNavItems = [
+        ...mainNavItems,
+        ...(user ? leaveNavItems : []),
+        ...infoNavItems,
+        { path: '/birthdays', icon: FaBirthdayCake, label: '生日提醒' },
+    ];
 
     return (
         <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-md' : 'bg-white'}`}>
@@ -169,52 +165,23 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu */}
-                <div className={`lg:hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}>
+                <div className={`lg:hidden transition-all duration-300 ease-in-out ${
+                    isOpen ? 'opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                } overflow-hidden`}>
                     <div className="px-2 pt-2 pb-3 space-y-1">
-                        {mainNavItems.map((item) => (
+                        {allNavItems.map((item) => (
                             <Link
                                 key={item.path}
                                 href={item.path}
                                 onClick={() => setIsOpen(false)}
-                                className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${router.pathname === item.path ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
+                                className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${
+                                    router.pathname === item.path ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                                }`}
                             >
                                 <item.icon className="mr-3 text-xl" />
                                 <span>{item.label}</span>
                             </Link>
                         ))}
-
-                        {user && leaveNavItems.map((item) => (
-                            <Link
-                                key={item.path}
-                                href={item.path}
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                            >
-                                <item.icon className="mr-3 text-xl" />
-                                <span>{item.label}</span>
-                            </Link>
-                        ))}
-
-                        {infoNavItems.map((item) => (
-                            <Link
-                                key={item.path}
-                                href={item.path}
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                            >
-                                <item.icon className="mr-3 text-xl" />
-                                <span>{item.label}</span>
-                            </Link>
-                        ))}
-
-                        <Link
-                            href="/birthdays"
-                            onClick={() => setIsOpen(false)}
-                            className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/birthdays' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
-                        >
-                            <FaBirthdayCake className="mr-3 text-xl" />
-                            <span>生日提醒</span>
-                        </Link>
 
                         {user ? (
                             <>
