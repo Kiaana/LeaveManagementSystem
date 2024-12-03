@@ -17,9 +17,9 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     }
   }, [user, loading, router, requiredRole]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  // if (loading) {
+  //   return <div>Loading...</div>;
+  // }
 
   if (!user) {
     return null;
