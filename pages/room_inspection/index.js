@@ -6,9 +6,9 @@ import {
     FaArrowRight
 } from 'react-icons/fa';
 import Link from 'next/link';
-import PageTransition from '../components/PageTransition';
-import ProtectedRoute from '../components/ProtectedRoute';
-import axiosInstance from '../services/axiosConfig';
+import PageTransition from '../../components/PageTransition';
+import ProtectedRoute from '../../components/ProtectedRoute';
+import axiosInstance from '../../services/axiosConfig';
 import { useEffect, useState } from 'react';
 
 
