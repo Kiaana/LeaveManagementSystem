@@ -21,6 +21,7 @@ import {
     FaTemperatureHigh,
     FaTemperatureLow,
     FaQuestionCircle,
+    FaClipboardList,
 } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -28,7 +29,7 @@ import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
     PieChart, Pie, Cell,
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+    Tooltip,
     ResponsiveContainer,
 } from 'recharts';
 import { Switch } from '@headlessui/react';
@@ -123,15 +124,18 @@ const Dashboard = () => {
     const [dutyInfo, setDutyInfo] = useState(null);
     const [currentTime, setCurrentTime] = useState(dayjs());
     const [weather, setWeather] = useState(null);
+    const [dormRankings, setDormRankings] = useState([]);
     const [loadingStats, setLoadingStats] = useState(true);
     const [loadingDutyInfo, setLoadingDutyInfo] = useState(true);
     const [loadingWeather, setLoadingWeather] = useState(true);
+    const [loadingDormRankings, setLoadingDormRankings] = useState(true);
     const [isDarkMode, setIsDarkMode] = useState(true);
 
     // 为每个请求创建独立的 isFetching 引用
     const isFetchingStats = useRef(false);
     const isFetchingDutyInfo = useRef(false);
     const isFetchingWeather = useRef(false);
+    const isFetchingDormRankings = useRef(false);
 
     // 通用的防抖函数，接收一个 useRef 引用
     const fetchWithDebounce = async (fetchFunction, isFetchingRef) => {
@@ -160,10 +164,12 @@ const Dashboard = () => {
         fetchWithDebounce(fetchStatistics, isFetchingStats);
         fetchWithDebounce(fetchDutyInfo, isFetchingDutyInfo);
         fetchWithDebounce(fetchWeather, isFetchingWeather);
+        fetchWithDebounce(fetchDormRankingsData, isFetchingDormRankings);
 
         // 定时更新数据，每 20 秒请求一次
         const statsInterval = setInterval(() => {
             fetchWithDebounce(fetchStatistics, isFetchingStats);
+            fetchWithDebounce(fetchDormRankingsData, isFetchingDormRankings);
         }, 20000);
 
         const dutyInfoInterval = setInterval(() => {
@@ -231,40 +237,19 @@ const Dashboard = () => {
         }
     };
 
-    // 处理请假去向分布图表数据，有什么数据就返回什么数据
-    const getDestinationChartData = () => {
-        if (!statistics?.by_destination?.current_leave) return [];
-        
-        return Object.keys(statistics.by_destination.current_leave).map((destination) => ({
-            name: destination,
-            value: statistics.by_destination.current_leave[destination],
-        }));
-        // return [
-        //     { name: '三号院内', value: statistics.by_destination.current_leave['三号院内'] || 0 },
-        //     { name: '一号院', value: statistics.by_destination.current_leave['一号院'] || 0 },
-        //     { name: '921医院', value: statistics.by_destination.current_leave['921医院'] || 0 },
-        //     { name: '其他', value: statistics.by_destination.current_leave['其他'] || 0 },
-        // ];
-    };
-
-    // 处理专业人数分布图表数据
-    const getMajorChartData = () => {
-    if (!statistics?.by_major) return [];
-    return Object.keys(statistics.by_major.total_students)
-        .map(major => ({
-            name: major,
-            总人数: statistics.by_major.total_students[major],
-            请假人数: statistics.by_major.current_leave[major] || 0,
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-};
-
-    // 获取专业进度条的颜色
-    const getProgressColor = (percentage) => {
-        if (percentage >= 90) return isDarkMode ? 'bg-green-500' : 'bg-green-400';
-        if (percentage >= 75) return isDarkMode ? 'bg-blue-500' : 'bg-blue-400';
-        if (percentage >= 60) return isDarkMode ? 'bg-yellow-500' : 'bg-yellow-400';
-        return isDarkMode ? 'bg-red-500' : 'bg-red-400';
+    // 获取内务排名数据
+    const fetchDormRankingsData = async () => {
+        try {
+            const response = await axiosInstance.get('/dormitories/rankings', {
+                params: { range: 'today' }
+            });
+            setDormRankings(response.data.data);
+        } catch (error) {
+            console.error('获取内务排名失败:', error);
+            toast.error('获取内务排名失败');
+        } finally {
+            setLoadingDormRankings(false);
+        }
     };
 
     // 处理主题切换
@@ -274,6 +259,82 @@ const Dashboard = () => {
 
     // 动态选择图表颜色
     const COLORS_CHART = isDarkMode ? DARK_COLORS : LIGHT_COLORS;
+
+    // 宿舍排名组件
+    const DormitoryRankings = ({ data, isDarkMode }) => {
+        if (!data || data.length === 0) {
+            return <div className="text-center text-gray-500">暂无内务排名数据</div>;
+        }
+
+        const maxScore = Math.max(...data.map(dorm => Math.abs(dorm.total_score)));
+
+        // 修改为4列布局
+        const columns = [[], [], [], []];
+        data.forEach((dorm) => {
+            const columnIndex = columns.findIndex(col =>
+                col.length === Math.min(...columns.map(col => col.length))
+            );
+            columns[columnIndex].push(dorm);
+        });
+
+        const getScoreWidth = (score) => `${(Math.abs(score) / maxScore) * 50}%`;
+
+        return (
+            <div className="grid grid-cols-4 gap-x-3 gap-y-2">
+                {columns.map((column, colIndex) => (
+                    <div key={colIndex} className="space-y-2">
+                        {column.map((dorm) => (
+                            <div
+                                key={dorm.dormitory_id}
+                                className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                    } rounded-lg p-2 pt-1.5 transition-colors duration-200`}
+                            >
+                                <div className="flex justify-between items-center text-sm mb-1">
+                                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                                        }`}>
+                                        {dorm.room_number}
+                                    </span>
+                                    <span className={`${dorm.total_score > 0
+                                            ? 'text-green-500'
+                                            : dorm.total_score < 0
+                                                ? 'text-red-500'
+                                                : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                                        } font-medium`}>
+                                        {dorm.total_score > 0 ? `+${dorm.total_score}` : dorm.total_score}
+                                    </span>
+                                </div>
+                                <div className="relative h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                    <div className="absolute inset-y-0 left-1/2 w-px bg-gray-300"></div>
+                                    {dorm.total_score < 0 && (
+                                        <div
+                                            className="absolute top-0 right-1/2 h-full bg-red-500"
+                                            style={{ width: getScoreWidth(dorm.total_score) }}
+                                        />
+                                    )}
+                                    {dorm.total_score > 0 && (
+                                        <div
+                                            className="absolute top-0 left-1/2 h-full bg-green-500"
+                                            style={{ width: getScoreWidth(dorm.total_score) }}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    // 获取请假去向分布图表数据
+    const getDestinationChartData = () => {
+        if (!statistics?.by_destination?.current_leave) return [];
+
+        return Object.keys(statistics.by_destination.current_leave).map((destination) => ({
+            name: destination,
+            value: statistics.by_destination.current_leave[destination],
+        }));
+    };
 
     return (
         <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800 text-white' : 'bg-gray-100 text-gray-800'}`}>
@@ -305,7 +366,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* 顶部信息栏 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     {/* 当前时间 */}
                     <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg flex flex-col items-center transition-colors duration-300`}>
                         <FaClock className={`text-4xl mb-4 animate-pulse ${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'}`} />
@@ -359,7 +420,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* 主要统计数据 */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     {[
                         { label: '全队人数', value: statistics?.overall?.total_students, icon: FaUserGraduate, color: 'text-blue-500' },
                         { label: '当前请假人数', value: statistics?.overall?.current_leave, icon: FaUserAlt, color: 'text-red-500' },
@@ -379,9 +440,9 @@ const Dashboard = () => {
                 </div>
 
                 {/* 图表区域 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-10 gap-6">
                     {/* 请假去向分布 */}
-                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg transition-colors duration-300`} style={{ height: '450px' }}>
+                    <div className={`col-span-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg transition-colors duration-300`} style={{ height: '500px' }}>
                         <h3 className={`text-xl font-semibold mb-4 flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                             <FaUserGraduate className={`mr-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'}`} /> 请假去向分布
                         </h3>
@@ -407,47 +468,25 @@ const Dashboard = () => {
                                         ))}
                                     </Pie>
                                     <Tooltip formatter={(value, name) => [`${value}人`, `${name}`]} />
-                                    {/* 移除图例 */}
-                                    {/* <Legend verticalAlign="bottom" height={36} /> */}
                                 </PieChart>
                             </ResponsiveContainer>
                         )}
                     </div>
 
-                    {/* 专业人数分布 */}
-                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg transition-colors duration-300`}>
+                    {/* 每日内务排名 */}
+                    <div className={`col-span-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg transition-colors duration-300`} style={{ height: '500px' }}>
                         <h3 className={`text-xl font-semibold mb-4 flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                            <FaUserGraduate className={`mr-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`} /> 专业人数分布
+                            <FaClipboardList className={`mr-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`} /> 今日内务排名
                         </h3>
-                        {loadingStats ? (
+                        {loadingDormRankings ? (
                             <div className="flex justify-center items-center h-40">
                                 <FaSpinner className="animate-spin text-4xl" />
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                {getMajorChartData().map((major, index) => {
-                                    const presentStudents = major.总人数 - major.请假人数;
-                                    const percentage = ((presentStudents / major.总人数) * 100).toFixed(1);
-
-                                    return (
-                                        <div key={index} className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{major.name}</span>
-                                                <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{percentage}%</span>
-                                            </div>
-                                            <div className="relative h-2 bg-gray-200 rounded">
-                                                <div
-                                                    className={`absolute top-0 left-0 h-full rounded ${getProgressColor(percentage)}`}
-                                                    style={{ width: `${percentage}%` }}
-                                                />
-                                            </div>
-                                            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                在位：{presentStudents} / 总数：{major.总人数}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <DormitoryRankings
+                                data={dormRankings}
+                                isDarkMode={isDarkMode}
+                            />
                         )}
                     </div>
                 </div>
