@@ -1,22 +1,9 @@
 // components/DataTable.js
-import React from 'react';
-import { memo } from 'react';
-import { motion } from 'framer-motion';
 import { FaSpinner } from 'react-icons/fa';
+import { memo } from 'react';
 
 const DataTable = ({ columns, data, loading, emptyMessage }) => {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="flex flex-col items-center space-y-4">
-          <FaSpinner className="animate-spin text-blue-500 text-4xl" />
-          <span className="text-gray-500 text-sm">加载中...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // 状态对应的样式
+  // 状态样式映射
   const statusStyles = {
     current: {
       bg: 'bg-blue-50',
@@ -33,7 +20,6 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
       border: 'border-l-4 border-l-red-500',
       text: 'text-red-700'
     },
-    // 未开始为灰色
     not_started: {
       bg: 'bg-gray-50',
       border: 'border-l-4 border-l-gray-500',
@@ -61,19 +47,47 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {data.length > 0 ? (
+            <tbody className="divide-y relative">
+              {loading ? (
+                <tr>
+                  <td colSpan={columns.length} className="relative">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 backdrop-blur-sm">
+                      <FaSpinner className="animate-spin text-blue-500 text-2xl" />
+                    </div>
+                    {/* 保持当前数据显示，添加半透明遮罩 */}
+                    {data.map((row) => {
+                      const statusStyle = statusStyles[row.status] || {};
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`group ${statusStyle.bg || ''} ${statusStyle.border || ''}`}
+                        >
+                          {columns.map((col) => (
+                            <td
+                              key={col.accessor}
+                              className={`px-6 py-4 whitespace-nowrap ${
+                                col.hideOnMobile ? 'hidden sm:table-cell' : ''
+                              }`}
+                            >
+                              <div className={`text-sm ${statusStyle.text || 'text-gray-600'} font-medium`}>
+                                {col.render ? col.render(row[col.accessor], row) : row[col.accessor]}
+                              </div>
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </td>
+                </tr>
+              ) : data.length > 0 ? (
                 data.map((row) => {
                   const statusStyle = statusStyles[row.status] || {};
                   return (
-                    <motion.tr
+                    <tr
                       key={row.id}
-                      className={`group hover:bg-gray-50 transition-all duration-200 ${
+                      className={`group hover:bg-gray-50 transition-colors duration-200 ${
                         statusStyle.bg || ''
                       } ${statusStyle.border || ''}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
                     >
                       {columns.map((col) => (
                         <td
@@ -87,15 +101,12 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
                           </div>
                         </td>
                       ))}
-                    </motion.tr>
-                  ); // 这里只需要一个右括号
+                    </tr>
+                  );
                 })
               ) : (
                 <tr>
-                  <td 
-                    colSpan={columns.length} 
-                    className="px-6 py-12 text-center"
-                  >
+                  <td colSpan={columns.length} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center space-y-2">
                       <svg
                         className="w-12 h-12 text-gray-300"
@@ -110,9 +121,7 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
                           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                         />
                       </svg>
-                      <p className="text-gray-500 text-sm">
-                        {emptyMessage || '暂无记录'}
-                      </p>
+                      <p className="text-gray-500 text-sm">{emptyMessage || '暂无记录'}</p>
                     </div>
                   </td>
                 </tr>
