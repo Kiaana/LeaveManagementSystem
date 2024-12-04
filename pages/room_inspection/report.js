@@ -119,7 +119,14 @@ const ReportContent = () => {
                                     <textarea
                                         {...register('reason', {
                                             required: '请输入加/扣分原因',
-                                            minLength: { value: 2, message: '原因至少2个字符' }
+                                            minLength: {
+                                                value: 2,
+                                                message: '原因至少2个字符'
+                                            },
+                                            validate: {
+                                                notEmpty: value => value.trim().length >= 2 || '原因不能全为空格且至少2个字符',
+                                                notOnlySpaces: value => !/^\s*$/.test(value) || '原因不能全为空格'
+                                            }
                                         })}
                                         className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.reason ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                                             } focus:border-transparent focus:outline-none focus:ring-2`}
