@@ -33,7 +33,6 @@ const EditLeaveContent = () => {
   } = useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [leaveData, setLeaveData] = useState(null);
 
   const startTime = watch('start_time');
   const destinationType = watch('destination_type');
@@ -47,7 +46,7 @@ const EditLeaveContent = () => {
         const data = res.data;
 
         // 检查权限
-        if (user.role !== 'admin' && data.user.id !== user.id) {
+        if (user.role !== 'superadmin' && data.user.id !== user.id) {
           toast.error('您无权编辑此请假记录');
           router.push('/overview');
           return;

@@ -7,25 +7,34 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  // 检查用户是否有权限
+  const hasRequiredRole = () => {
+    if (!requiredRole || !user) return false;
+    
+    // 处理权限数组
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(user.role);
+    }
+    
+    // 处理单个权限
+    return user.role === requiredRole;
+  };
+
   useEffect(() => {
     if (!loading) {
       if (!user) {
         router.push(`/login?redirect=${encodeURIComponent(router.asPath)}`);
-      } else if (requiredRole && user.role !== requiredRole) {
+      } else if (requiredRole && !hasRequiredRole()) {
         router.push('/unauthorized');
       }
     }
   }, [user, loading, router, requiredRole]);
 
-  // if (loading) {
-  //   return <div>Loading...</div>;
-  // }
-
-  if (!user) {
+  if (loading || !user) {
     return null;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && !hasRequiredRole()) {
     return null;
   }
 
