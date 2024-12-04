@@ -19,6 +19,7 @@ import Button from '../../components/Button';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import ProtectedRoute from '../../components/ProtectedRoute';
+import { formatDate } from '../../utils/dateFormatter';
 
 const EditLeaveContent = () => {
   const router = useRouter();
@@ -33,7 +34,7 @@ const EditLeaveContent = () => {
   } = useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-
+  const [leaveData, setLeaveData] = useState(null);
   const startTime = watch('start_time');
   const destinationType = watch('destination_type');
 
@@ -52,29 +53,11 @@ const EditLeaveContent = () => {
           return;
         }
 
-        // 将UTC时间换算为本地时间显示
-        const startTime = new Date(data.start_time);
-        const expectedReturnTime = new Date(data.expected_return_time);
-
-        // 本地时间
-        const localStartTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000);
-        const localExpectedReturnTime = new Date(expectedReturnTime.getTime() - expectedReturnTime.getTimezoneOffset() * 60000);
-
-        // 格式化本地时间为 'YYYY-MM-DDTHH:mm'
-        const formatLocalTime = (date) => {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          const hours = String(date.getHours()).padStart(2, '0');
-          const minutes = String(date.getMinutes()).padStart(2, '0');
-          return `${year}-${month}-${day}T${hours}:${minutes}`;
-        };
-
         setValue('name', data.user.name);
         setValue('leave_type', data.leave_type);
         setValue('approver', data.approver);
-        setValue('start_time', formatLocalTime(localStartTime));
-        setValue('expected_return_time', formatLocalTime(localExpectedReturnTime));
+        setValue('start_time', formatDate(data.start_time, 'custom', 'YYYY-MM-DDTHH:mm'));
+        setValue('expected_return_time', formatDate(data.expected_return_time, 'custom', 'YYYY-MM-DDTHH:mm'));
 
         // 设置 destination_type 和 destination
         if (data.destination_type) {
