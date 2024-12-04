@@ -34,11 +34,6 @@ const Navbar = () => {
         { path: '/', icon: FaHome, label: '首页' },
     ];
 
-    const leaveNavItems = user ? [
-        { path: '/leave_request', icon: FaCalendarAlt, label: '请假登记' },
-        { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假登记' },
-    ] : [];
-
     const infoNavItems = [
         { path: '/major_overview', icon: FaUniversity, label: '专业概览' },
         { path: '/duty_info', icon: FaClock, label: '值班信息' },
@@ -46,7 +41,8 @@ const Navbar = () => {
     ];
 
     const systemNavItems = user ? [
-        { title: '请销假', icon: FaCalendarAlt, items: leaveNavItems },
+        { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
+        { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' },
         { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
         { title: '信息查询', icon: FaUniversity, items: infoNavItems },
     ] : [];
@@ -60,8 +56,9 @@ const Navbar = () => {
     const allNavItems = [
         ...mainNavItems,
         ...(user ? [
-            // 请假相关
-            ...leaveNavItems,
+            // 直接添加请假和销假
+            { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
+            { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' },
             // 内务
             { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
             // 展平信息查询菜单
