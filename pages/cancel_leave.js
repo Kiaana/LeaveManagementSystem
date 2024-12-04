@@ -1,195 +1,160 @@
 // pages/cancel_leave.js
-import React, { useState, useEffect } from 'react';
-import axiosInstance from '../services/axiosConfig';
-import { useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
-import PageTransition from '../components/PageTransition';
-import { FaSpinner, FaClipboard } from 'react-icons/fa';
-import { motion } from 'framer-motion';
-import FormField from '../components/FormField';
-import Button from '../components/Button';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import axiosInstance from '../services/axiosConfig';
+import { FaSearch, FaSpinner } from 'react-icons/fa';
+import PageTransition from '../components/PageTransition';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { LeaveCard } from '../components/LeaveCard';
+import Pagination from '../components/Pagination';
+import { toast } from 'react-toastify';
 
-const CancelLeaveContent = () => {
+const CancelLeavePage = () => {
   const { user } = useAuth();
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
-  const [loading, setLoading] = useState(false);
-  const [loadingLeave, setLoadingLeave] = useState(true);
-  const [pendingLeave, setPendingLeave] = useState(null);
+  const [leaves, setLeaves] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [pageInfo, setPageInfo] = useState({
+    total: 0,
+    pages: 1,
+    current_page: 1,
+    per_page: 10
+  });
+  const [filters, setFilters] = useState({
+    name: '',
+    major: '',
+    is_cancelled: 'false' // 默认只显示未销假记录
+  });
 
-  useEffect(() => {
-    const fetchPendingLeave = async () => {
-      if (!user) return;
-
-      try {
-        const res = await axiosInstance.get('/leave_requests', {
-          params: {
-            is_cancelled: 'false',
-            user_id: user.id,
-          },
-        });
-        if (res.data.total === 0) {
-          toast.error('您目前没有未销假的请假记录，无需销假。');
-          setPendingLeave(null);
-        } else {
-          const leave = res.data.data[0];
-
-          const startTime = new Date(leave.start_time);
-          const expectedReturnTime = new Date(leave.expected_return_time);
-
-          const localStartTime = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000);
-          const localExpectedReturnTime = new Date(expectedReturnTime.getTime() - expectedReturnTime.getTimezoneOffset() * 60000);
-
-          const formatLocalTime = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
-          };
-
-          leave.formatted_start_time = formatLocalTime(localStartTime);
-          leave.formatted_expected_return_time = formatLocalTime(localExpectedReturnTime);
-
-          setPendingLeave(leave);
-        }
-      } catch (error) {
-        console.error('Error fetching pending leave:', error);
-        toast.error('无法获取您的请假信息，请稍后再试。');
-      } finally {
-        setLoadingLeave(false);
-      }
-    };
-
-    fetchPendingLeave();
-  }, [user]);
-
-  const onSubmit = async (data) => {
-    if (!pendingLeave) {
-      setError('submit', { type: 'manual', message: '没有未销假记录' });
-      return;
-    }
+  const fetchLeaves = async (page = 1) => {
     setLoading(true);
-    // data.actual_return_time = new Date(data.actual_return_time).toISOString();
-    // 销假时间为当前时间
-    data.actual_return_time = new Date().toISOString();
-
     try {
-      await axiosInstance.post('/cancel_leave', data);
-      toast.success('销假成功');
-      reset();
-      setPendingLeave(null);
+      const params = {
+        page,
+        per_page: pageInfo.per_page,
+        ...filters,
+        ...(user.role === 'admin' ? { approver: user.name } : {})
+      };
+
+      const response = await axiosInstance.get('/leave_requests', { params });
+      setLeaves(response.data.data);
+      setPageInfo({
+        total: response.data.total,
+        pages: response.data.pages,
+        current_page: response.data.current_page,
+        per_page: response.data.per_page
+      });
     } catch (error) {
-      console.error('Error submitting cancellation:', error);
-      toast.error(error.response?.data?.error || '提交失败，请重试');
+      toast.error('获取请假记录失败');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchLeaves();
+  }, [filters]);
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCancelLeave = async (id, method) => {
+    if (!window.confirm('确认要为该学员销假吗？')) return;
+
+    setActionLoading(true);
+    try {
+      await axiosInstance.post(`/leave_requests/${id}/cancel`, {
+        actual_return_time: new Date().toISOString(),
+        cancellation_method: method
+      });
+      toast.success('销假成功');
+      fetchLeaves(pageInfo.current_page);
+    } catch (error) {
+      toast.error(error.response?.data?.error || '销假失败');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-white py-8">
-        <div className="container max-w-2xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-lg p-6 md:p-8"
-          >
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">
-              销假信息填报
-            </h1>
-
-            {loadingLeave ? (
-              <div className="flex justify-center">
-                <FaSpinner className="animate-spin text-gray-500 text-3xl" />
+    <ProtectedRoute requiredRole={['admin', 'superadmin']}>
+      <PageTransition>
+        <div className="min-h-screen bg-white py-8">
+          <div className="container mx-auto px-4">
+            {/* 标题部分 */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-800">销假管理</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    共 {pageInfo.total} 条记录
+                  </p>
+                </div>
               </div>
-            ) : pendingLeave ? (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="mb-4">
-                  <h2 className="text-xl font-semibold text-gray-700">待销假记录</h2>
-                  <p className="text-gray-600">
-                    请假类型: <span className="font-medium">{pendingLeave.leave_type}</span>
-                  </p>
-                  <p className="text-gray-600">
-                    请假去向: <span className="font-medium">{pendingLeave.destination}</span>
-                  </p>
-                  <p className="text-gray-600">
-                    请假时间: {pendingLeave.formatted_start_time} 至 {pendingLeave.formatted_expected_return_time}
-                  </p>
-                </div>
 
-                <FormField label="销假方式" icon={FaClipboard} error={errors.cancellation_method}>
-                  <select
-                    {...register('cancellation_method', {
-                      required: '请选择销假方式'
-                    })}
-                    className={`w-full pl-10 pr-10 py-2.5 rounded-lg border ${errors.cancellation_method ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                      } focus:border-transparent focus:outline-none focus:ring-2`}
-                  >
-                    <option value="">请选择销假方式</option>
-                    <option value="当面销假">当面销假</option>
-                    <option value="微信销假">微信销假</option>
-                  </select>
-                </FormField>
-
-                {/* <FormField label="实际返回时间" icon={FaCalendarAlt} error={errors.actual_return_time}>
+              {/* 筛选区域 */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
                   <input
-                    type="datetime-local"
-                    {...register('actual_return_time', {
-                      required: '请选择实际返回时间',
-                      validate: value => {
-                        const start = new Date(pendingLeave.start_time);
-                        const selectedTime = new Date(value);
-                        const now = new Date();
-                        if (selectedTime < start) {
-                          return '实际返回时间不能早于出发时间';
-                        }
-                        if (selectedTime > now) {
-                          return '实际返回时间不能晚于当前时间';
-                        }
-                        return true;
-                      }
-                    })}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.actual_return_time ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                      } focus:border-transparent focus:outline-none focus:ring-2`}
+                    type="text"
+                    value={filters.name}
+                    onChange={(e) => handleFilterChange('name', e.target.value)}
+                    placeholder="搜索姓名"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </FormField> */}
-
-                {errors.submit && (
-                  <p className="text-red-500 text-center">{errors.submit.message}</p>
-                )}
-
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-                  <Button type="submit" disabled={loading || errors.submit} variant="primary">
-                    {loading ? (
-                      <>
-                        <FaSpinner className="animate-spin mr-2" />
-                        提交中...
-                      </>
-                    ) : '提交销假'}
-                  </Button>
-                  <Button type="button" onClick={() => reset()} variant="secondary">
-                    重置表单
-                  </Button>
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
-              </form>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={filters.major}
+                    onChange={(e) => handleFilterChange('major', e.target.value)}
+                    placeholder="搜索专业"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* 卡片列表 */}
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <FaSpinner className="animate-spin text-3xl text-blue-500" />
+              </div>
+            ) : leaves.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {leaves.map(leave => (
+                  <LeaveCard
+                    key={leave.id}
+                    data={leave}
+                    onCancelLeave={handleCancelLeave}
+                    actionLoading={actionLoading}
+                  />
+                ))}
+              </div>
             ) : (
-              <p className="text-center text-gray-600">您目前没有未销假的请假记录。</p>
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-500">暂无请假记录</p>
+              </div>
             )}
-          </motion.div>
+
+            {/* 分页 */}
+            {pageInfo.pages > 1 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={pageInfo.current_page}
+                  totalPages={pageInfo.pages}
+                  onPageChange={(page) => fetchLeaves(page)}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </PageTransition>
+      </PageTransition>
+    </ProtectedRoute>
   );
 };
 
-export default function CancelLeavePage() {
-  return (
-    <ProtectedRoute>
-      <CancelLeaveContent />
-    </ProtectedRoute>
-  );
-} 
+export default CancelLeavePage;

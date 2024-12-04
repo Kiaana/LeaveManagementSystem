@@ -35,20 +35,23 @@ const Navbar = () => {
     ];
 
     const infoNavItems = [
-        { path: '/major_overview', icon: FaUniversity, label: '专业概览' },
-        { path: '/duty_info', icon: FaClock, label: '值班信息' },
-        { path: '/overview', icon: FaClipboardList, label: '信息总览' },
+        { path: '/major_overview', icon: FaUniversity, label: '专业' },
+        { path: '/duty_info', icon: FaClock, label: '值班' },
+        { path: '/overview', icon: FaClipboardList, label: '请假总览' },
     ];
 
     const systemNavItems = user ? [
         { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
-        { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' },
+        // 只有 admin 和 superadmin 显示销假
+        ...((['admin', 'superadmin'].includes(user.role)) ? [
+            { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' }
+        ] : []),
         { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
         { title: '信息查询', icon: FaUniversity, items: infoNavItems },
     ] : [];
 
     const userNavItems = [
-        { path: '/birthdays', icon: FaBirthdayCake, label: '生日提醒' },
+        { path: '/birthdays', icon: FaBirthdayCake, label: '生日' },
         ...(user ? [{ path: '/profile', icon: FaUserCircle, label: '个人信息' }] : []),
     ];
 
@@ -56,9 +59,12 @@ const Navbar = () => {
     const allNavItems = [
         ...mainNavItems,
         ...(user ? [
-            // 直接添加请假和销假
+            // 请假始终显示
             { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
-            { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' },
+            // 销假只对特定角色显示
+            ...((['admin', 'superadmin'].includes(user.role)) ? [
+                { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' }
+            ] : []),
             // 内务
             { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
             // 展平信息查询菜单
