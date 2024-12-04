@@ -60,8 +60,6 @@ const CancelLeavePage = () => {
   };
 
   const handleCancelLeave = async (id, method) => {
-    if (!window.confirm('确认要为该学员销假吗？')) return;
-
     setActionLoading(true);
     try {
       await axiosInstance.post(`/leave_requests/${id}/cancel`, {
