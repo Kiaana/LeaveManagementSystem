@@ -52,7 +52,13 @@ const Navbar = () => {
 
     const userNavItems = [
         { path: '/birthdays', icon: FaBirthdayCake, label: '生日' },
-        ...(user ? [{ path: '/profile', icon: FaUserCircle, label: '个人信息' }] : []),
+        ...(user ? [
+            { path: '/profile', icon: FaUserCircle, label: '我' },
+            // 只有 superadmin 显示管理后台
+            ...((user.role === 'superadmin') ? [
+                { path: '/admin', icon: FaUniversity, label: '管理' }
+            ] : []),
+        ] : []),
     ];
 
     // 合并移动端导航项

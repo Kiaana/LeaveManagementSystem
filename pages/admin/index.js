@@ -31,7 +31,7 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <ProtectedRoute requiredRole="superadmin">
+    <ProtectedRoute requiredRole={['admin', 'superadmin']}>
       <PageTransition>
         <div className="min-h-screen bg-white py-8">
           <div className="container mx-auto px-4">
