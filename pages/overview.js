@@ -10,6 +10,7 @@ import DataTable from '../components/DataTable';
 import FilterForm from '../components/FilterForm';
 import Card from '../components/Card';
 import Pagination from '../components/Pagination';
+import { formatDate } from '../utils/dateFormatter';
 
 // 防抖机制，避免重复请求
 let isFetching = false;
@@ -166,24 +167,6 @@ const Overview = () => {
     URL.revokeObjectURL(url);
 
     toast.success('导出成功！');
-  };
-
-  // 本地时间格式化函数
-  const formatDate = (value) => {
-    if (!value) return '未提供时间';
-    const utcDate = new Date(value);
-    const timeZoneOffset = utcDate.getTimezoneOffset() * 60000;
-    const localDate = new Date(utcDate.getTime() - timeZoneOffset);
-
-    const options = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    };
-    return new Intl.DateTimeFormat('zh-CN', options).format(localDate);
   };
 
   // 更新表格列定义

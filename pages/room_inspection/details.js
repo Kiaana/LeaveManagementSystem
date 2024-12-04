@@ -16,6 +16,7 @@ import PageTransition from '../../components/PageTransition';
 import dayjs from 'dayjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProtectedRoute from '../../components/ProtectedRoute';
+import { formatDate } from '../../utils/dateFormatter';
 
 const DetailsContent = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
@@ -52,23 +53,6 @@ const DetailsContent = () => {
       }
       return next;
     });
-  };
-
-  const formatTime = (dateString) => {
-    try {
-      // 创建dayjs对象并获取当地时区偏移量（分钟）
-      const localOffset = new Date().getTimezoneOffset();
-      
-      // 解析原始时间并应用偏移
-      const time = dayjs(dateString)
-        .subtract(localOffset, 'minute')
-        .format('HH:mm');
-      
-      return time;
-    } catch (error) {
-      console.error('时间格式化错误:', error);
-      return '时间格式错误';
-    }
   };
 
   return (
@@ -154,7 +138,7 @@ const DetailsContent = () => {
                                     </span>
                                     <div className="flex items-center text-sm text-gray-500">
                                       <FaClock className="mr-1" />
-                                      {formatTime(inspection.created_at)}
+                                      {formatDate(inspection.created_at, 'time')}
                                     </div>
                                   </div>
                                   <p className="text-gray-600">{inspection.reason}</p>

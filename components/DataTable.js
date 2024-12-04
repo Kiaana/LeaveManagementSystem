@@ -65,7 +65,7 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
                           {columns.map((col) => (
                             <td
                               key={col.accessor}
-                              className={`px-6 py-4 whitespace-nowrap ${
+                              className={`px-6 py-3 whitespace-nowrap ${
                                 col.hideOnMobile ? 'hidden sm:table-cell' : ''
                               }`}
                             >
@@ -92,7 +92,7 @@ const DataTable = ({ columns, data, loading, emptyMessage }) => {
                       {columns.map((col) => (
                         <td
                           key={col.accessor}
-                          className={`px-6 py-4 whitespace-nowrap ${
+                          className={`px-6 py-3 whitespace-nowrap ${
                             col.hideOnMobile ? 'hidden sm:table-cell' : ''
                           }`}
                         >

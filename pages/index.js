@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import DataTable from '../components/DataTable';
 import Card from '../components/Card';
 import Pagination from '../components/Pagination';
+import { formatDate } from '../utils/dateFormatter';
 
 // 卡片组件，使用 React.memo 优化
 const StatCard = React.memo(({ icon: Icon, title, value, loading, bgColor, iconColor, href }) => (
@@ -107,29 +108,9 @@ const Home = () => {
       });
 
       const processedData = res.data.data.map((leave) => {
-        const now = new Date();
-        const nowLocal = new Date(now.toISOString());
-        // 使用本地时间计算UTC时间
-        const nowUTC = new Date(nowLocal.getTime() + nowLocal.getTimezoneOffset() * 60000);
-
-        const expectedReturnTime = new Date(leave.expected_return_time);
-        const actualReturnTime = leave.actual_return_time ? new Date(leave.actual_return_time) : null;
-
-        // 根据请假状态计算状态，共四种状态：current, cancelled, overdue, not_started
-        let status = 'current';
-        // 如果现在时间早于开始时间，则状态为未开始
-        if (nowUTC < new Date(leave.start_time)) {
-          status = 'not_started';
-        } else if (actualReturnTime) {
-          status = 'cancelled';
-        } else if (expectedReturnTime < nowUTC) {
-          status = 'overdue';
-        }
-
         // 直接获取用户姓名
         const userName = leave.user ? leave.user.name : '未知用户';
-
-        return { ...leave, status, user_name: userName };
+        return { ...leave, user_name: userName };
       });
 
       setRecentLeaves(processedData);
@@ -162,24 +143,6 @@ const Home = () => {
     }
   };
 
-  // 定义日期格式化函数
-  const formatDate = (value) => {
-    if (!value) return '-';
-
-    // 将UTC时间转换为本地时间
-    const utcDate = new Date(value);
-    const timeZoneOffset = utcDate.getTimezoneOffset() * 60000;
-    const localDate = new Date(utcDate.getTime() - timeZoneOffset);
-
-    const options = {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    };
-    return new Intl.DateTimeFormat('zh-CN', options).format(localDate);
-  };
 
   // 定义最近请销假记录的表格列
   const columns = [
