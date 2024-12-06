@@ -57,6 +57,14 @@ const OthersPage = () => {
             path: '/birthdays',
             color: 'bg-pink-500'
         },
+        // 值班信息
+        {
+            title: '值班信息',
+            description: '查看值班信息',
+            icon: FaClipboardList,
+            path: '/duty_info',
+            color: 'bg-blue-500'
+        },
         {
             title: '个人信息',
             description: '管理个人资料',
