@@ -84,7 +84,7 @@ const OthersPage = () => {
 
     return (
         <PageTransition>
-            <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
+            <div className="min-h-screen bg-white py-4 lg:py-8">
                 <div className="container mx-auto px-4">
                     <h1 className="text-xl lg:text-2xl font-bold text-gray-800 mb-4 lg:mb-6">更多功能</h1>
                     <div className="grid grid-cols-2 gap-3 lg:gap-4">
