@@ -1,4 +1,5 @@
 // components/Navbar.js
+import React from 'react';
 import Link from 'next/link';
 import {
     FaHome,
@@ -11,25 +12,23 @@ import {
     FaUserCircle,
     FaCaretDown,
     FaBirthdayCake,
+    FaEllipsisH
 } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
-import { FiMenu } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
-import React from 'react';
 
 const Navbar = () => {
-    const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const router = useRouter();
     const { user, logout } = useAuth();
 
     // 导航样式
     const navItemStyles = `flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200`;
-    const getActiveStyles = (path) => 
+    const getActiveStyles = (path) =>
         router.pathname === path ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50';
 
-    // 导航项分组
+    // 定义导航项
     const mainNavItems = [
         { path: '/', icon: FaHome, label: '首页' },
     ];
@@ -42,7 +41,6 @@ const Navbar = () => {
 
     const systemNavItems = user ? [
         { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
-        // 只有 admin 和 superadmin 显示销假
         ...((['admin', 'superadmin'].includes(user.role)) ? [
             { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' }
         ] : []),
@@ -53,31 +51,26 @@ const Navbar = () => {
     const userNavItems = [
         { path: '/birthdays', icon: FaBirthdayCake, label: '生日' },
         ...(user ? [
-            { path: '/profile', icon: FaUserCircle, label: '我' },
-            // 只有 superadmin 显示管理后台
+            { path: '/profile', icon: FaUserCircle, label: '我的' },
             ...((user.role === 'superadmin') ? [
                 { path: '/admin', icon: FaUniversity, label: '管理' }
             ] : []),
         ] : []),
     ];
 
-    // 合并移动端导航项
-    const allNavItems = [
-        ...mainNavItems,
-        ...(user ? [
-            // 请假始终显示
-            { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
-            // 销假只对特定角色显示
-            ...((['admin', 'superadmin'].includes(user.role)) ? [
-                { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' }
-            ] : []),
-            // 内务
-            { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
-            // 展平信息查询菜单
-            ...infoNavItems,
+    // 移动端导航项
+    const mobileNavItems = user ? [
+        { path: '/', icon: FaHome, label: '首页' },
+        { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
+        // 管理员和超级管理员才显示销假
+        ...(['admin', 'superadmin'].includes(user.role) ? [
+            { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' }
         ] : []),
-        // 生日提醒和个人信息
-        ...userNavItems,
+        { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
+        { path: '/others', icon: FaEllipsisH, label: '其他' }, // 修改路径和图标
+    ] : [
+        { path: '/', icon: FaHome, label: '首页' },
+        { path: '/login', icon: FaSignInAlt, label: '登录' },
     ];
 
     // 导航项渲染函数
@@ -95,28 +88,27 @@ const Navbar = () => {
     // 下拉菜单组件
     const DropdownMenu = ({ items, title, icon: Icon }) => {
         const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-        const timeoutRef = React.useRef(null);
+        const dropdownRef = React.useRef(null);
 
-        const handleMouseEnter = () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-            setIsDropdownOpen(true);
-        };
+        useEffect(() => {
+            const handleClickOutside = (event) => {
+                if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                    setIsDropdownOpen(false);
+                }
+            };
 
-        const handleMouseLeave = () => {
-            timeoutRef.current = setTimeout(() => {
-                setIsDropdownOpen(false);
-            }, 100);
-        };
+            document.addEventListener('click', handleClickOutside, true);
+            return () => {
+                document.removeEventListener('click', handleClickOutside, true);
+            };
+        }, []);
 
         return (
-            <div
-                className="relative"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-            >
-                <button className={`${navItemStyles} text-gray-600 hover:text-blue-600 hover:bg-blue-50`}>
+            <div ref={dropdownRef} className="relative">
+                <button
+                    className={`${navItemStyles} text-gray-600 hover:text-blue-600 hover:bg-blue-50`}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
                     <Icon className="mr-2 text-lg" />
                     <span>{title}</span>
                     <FaCaretDown className="ml-1" />
@@ -130,6 +122,7 @@ const Navbar = () => {
                                     key={item.path}
                                     href={item.path}
                                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                                    onClick={() => setIsDropdownOpen(false)}
                                 >
                                     <item.icon className="mr-2" />
                                     <span>{item.label}</span>
@@ -150,99 +143,70 @@ const Navbar = () => {
     }, []);
 
     return (
-        <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-md' : 'bg-white'}`}>
-            <div className="container mx-auto px-4">
-                <div className="flex items-center justify-between h-16">
-                    <Link href="/" className="flex items-center space-x-2 text-gray-800 text-xl font-bold">
-                        <FaClipboardList className="text-2xl text-blue-600" />
-                        <span>请销假登记系统</span>
-                    </Link>
+        <>
+            {/* 桌面端导航栏 */}
+            <nav className="fixed w-full top-0 z-50 transition-all duration-300 bg-white shadow-md lg:flex hidden">
+                <div className="w-full px-6">
+                    <div className="flex items-center justify-between h-16 max-w-[1920px] mx-auto">
+                        <Link href="/" className="flex items-center space-x-2 text-gray-800 text-xl font-bold shrink-0">
+                            <FaClipboardList className="text-2xl text-blue-600" />
+                            <span>请销假登记系统</span>
+                        </Link>
 
-                    {/* Desktop Menu */}
-                    <div className="hidden lg:flex items-center space-x-1">
-                        {mainNavItems.map(renderNavItem)}
-                        
-                        {systemNavItems.map((item) => 
-                            item.items ? (
-                                <DropdownMenu
-                                    key={item.title}
-                                    items={item.items}
-                                    title={item.title}
-                                    icon={item.icon}
-                                />
-                            ) : renderNavItem(item)
-                        )}
-
-                        {userNavItems.map(renderNavItem)}
-
-                        {user ? (
-                            <button
-                                onClick={logout}
-                                className={`${navItemStyles} text-gray-600 hover:text-blue-600 hover:bg-blue-50`}
-                            >
-                                <FaSignOutAlt className="mr-2 text-lg" />
-                                <span>登出</span>
-                            </button>
-                        ) : (
-                            <Link
-                                href="/login"
-                                className={`${navItemStyles} text-gray-600 hover:text-blue-600 hover:bg-blue-50`}
-                            >
-                                <FaSignInAlt className="mr-2 text-lg" />
-                                <span>登录</span>
-                            </Link>
-                        )}
-                    </div>
-
-                    {/* Mobile Menu Button */}
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="lg:hidden p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                    >
-                        <FiMenu size={24} />
-                    </button>
-                </div>
-
-                {/* Mobile Menu */}
-                <div className={`lg:hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}>
-                    <div className="px-2 pt-2 pb-3 space-y-1">
-                        {allNavItems.map((item) => (
-                            <Link
-                                key={item.path}
-                                href={item.path}
-                                onClick={() => setIsOpen(false)}
-                                className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${getActiveStyles(item.path)}`}
-                            >
-                                <item.icon className="mr-3 text-xl" />
-                                <span>{item.label}</span>
-                            </Link>
-                        ))}
-
-                        {user ? (
-                            <button
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    logout();
-                                }}
-                                className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                            >
-                                <FaSignOutAlt className="mr-3 text-xl" />
-                                <span>登出</span>
-                            </button>
-                        ) : (
-                            <Link
-                                href="/login"
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                            >
-                                <FaSignInAlt className="mr-3 text-xl" />
-                                <span>登录</span>
-                            </Link>
-                        )}
+                        <div className="flex items-center space-x-1 overflow-x-auto">
+                            {mainNavItems.map(renderNavItem)}
+                            {systemNavItems.map((item) =>
+                                item.items ? (
+                                    <DropdownMenu
+                                        key={item.title}
+                                        items={item.items}
+                                        title={item.title}
+                                        icon={item.icon}
+                                    />
+                                ) : renderNavItem(item)
+                            )}
+                            {userNavItems.map(renderNavItem)}
+                            {user ? (
+                                <button
+                                    onClick={logout}
+                                    className={`${navItemStyles} text-gray-600 hover:text-blue-600 hover:bg-blue-50`}
+                                >
+                                    <FaSignOutAlt className="mr-2 text-lg" />
+                                    <span>登出</span>
+                                </button>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    className={`${navItemStyles} text-gray-600 hover:text-blue-600 hover:bg-blue-50`}
+                                >
+                                    <FaSignInAlt className="mr-2 text-lg" />
+                                    <span>登录</span>
+                                </Link>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </nav>
+            </nav>
+
+            {/* 移动端底部导航栏 */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-50">
+                <div className="grid grid-cols-5 h-16">
+                    {mobileNavItems.map(item => (
+                        <Link
+                            key={item.path}
+                            href={item.path}
+                            className={`flex flex-col items-center justify-center space-y-1 ${router.pathname === item.path
+                                ? 'text-blue-600'
+                                : 'text-gray-600'
+                                }`}
+                        >
+                            <item.icon className="text-xl" />
+                            <span className="text-xs">{item.label}</span>
+                        </Link>
+                    ))}
+                </div>
+            </nav>
+        </>
     );
 };
 

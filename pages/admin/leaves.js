@@ -78,7 +78,7 @@ const LeavesPage = () => {
           <Link href={`/edit/${row.id}`}>
             <Button variant="secondary" size="sm">
               <FaEdit className="mr-1" />
-              编辑  
+              编辑
             </Button>
           </Link>
           <Button
@@ -102,7 +102,7 @@ const LeavesPage = () => {
         per_page: pageInfo.per_page,
         ...filters
       };
-      
+
       const response = await axiosInstance.get('/leave_requests', { params });
       setLeaves(response.data.data);
       setPageInfo({
@@ -150,7 +150,7 @@ const LeavesPage = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('确定要删除此请假记录吗？')) return;
-    
+
     try {
       await axiosInstance.delete(`/leave_requests/${id}`);
       toast.success('删除成功');
@@ -162,7 +162,7 @@ const LeavesPage = () => {
 
   const handleBatchDelete = async () => {
     if (!window.confirm('确定要删除所有请假记录吗？此操作不可恢复！')) return;
-    
+
     try {
       await axiosInstance.delete('/leave_requests');
       toast.success('批量删除成功');
@@ -173,9 +173,10 @@ const LeavesPage = () => {
   };
 
   const FilterForm = () => (
-    <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <div className="bg-white rounded-lg lg:rounded-xl shadow-sm p-4 lg:p-6 mb-4 lg:mb-6">
       <form onSubmit={handleFilterSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+          {/* 姓名搜索 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">姓名</label>
             <div className="relative">
@@ -184,7 +185,7 @@ const LeavesPage = () => {
                 name="name"
                 value={filters.name}
                 onChange={handleFilterChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-2 text-sm lg:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="搜索姓名"
               />
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -259,7 +260,7 @@ const LeavesPage = () => {
           </Button>
         </div>
       </form>
-      </div>
+    </div>
   );
 
 

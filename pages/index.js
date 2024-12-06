@@ -158,7 +158,7 @@ const Home = () => {
     <PageTransition>
       <div className="container mx-auto px-4 py-6">
         <motion.h1
-          className="text-2xl md:text-3xl font-bold mb-8 text-center text-gray-800"
+          className="text-2xl lg:text-3xl font-bold mb-4 lg:mb-8 text-center text-gray-800"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -169,11 +169,12 @@ const Home = () => {
         {/* 统一的内容容器 */}
         <div className="max-w-4xl mx-auto">
           {/* StatCards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+          {/* StatCards - 移动端两列布局 */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-6 mb-4 lg:mb-8">
             {/* 统计卡片 */}
             <StatCard
               icon={FaUserClock}
-              title="当前请假人数"
+              title="当前请假"
               value={statistics.current_leave || 0}
               loading={loadingStats}
               bgColor="bg-blue-50"
@@ -182,7 +183,7 @@ const Home = () => {
             />
             <StatCard
               icon={FaCheckCircle}
-              title="今日已销假人数"
+              title="今日销假"
               value={statistics.today_cancelled || 0}
               loading={loadingStats}
               bgColor="bg-green-50"

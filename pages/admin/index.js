@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { FaUsers, FaCalendarAlt, FaClipboardList } from 'react-icons/fa';
 import PageTransition from '../../components/PageTransition';
@@ -33,17 +31,17 @@ const AdminDashboard = () => {
   return (
     <ProtectedRoute requiredRole={['admin', 'superadmin']}>
       <PageTransition>
-        <div className="min-h-screen bg-white py-8">
+      <div className="min-h-screen bg-white py-2 lg:py-8">
           <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">管理后台</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-8">管理后台</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
               {menuItems.map((item, index) => (
                 <Link
                   key={index}
                   href={item.path}
                   className="block transition-transform duration-200 hover:-translate-y-1"
                 >
-                  <div className="bg-white rounded-xl shadow-lg p-6">
+                  <div className="bg-white rounded-xl shadow-lg p-4 lg:p-6">
                     <div className={`inline-flex p-3 rounded-lg ${item.color} text-white mb-4`}>
                       <item.icon className="text-2xl" />
                     </div>
