@@ -190,14 +190,20 @@ const Navbar = () => {
 
             {/* 移动端底部导航栏 */}
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-50">
-                <div className="grid grid-cols-5 h-16">
+                <div className={`grid ${!user
+                        ? 'grid-cols-2' // 未登录时显示2列
+                        : (['admin', 'superadmin'].includes(user.role)
+                            ? 'grid-cols-5' // 管理员显示5列
+                            : 'grid-cols-4' // 普通用户显示4列
+                        )
+                    } h-16`}>
                     {mobileNavItems.map(item => (
                         <Link
                             key={item.path}
                             href={item.path}
                             className={`flex flex-col items-center justify-center space-y-1 ${router.pathname === item.path
-                                ? 'text-blue-600'
-                                : 'text-gray-600'
+                                    ? 'text-blue-600'
+                                    : 'text-gray-600'
                                 }`}
                         >
                             <item.icon className="text-xl" />

@@ -1,5 +1,7 @@
 // pages/others.js
 import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/router';
+import { toast } from 'react-toastify';
 import Link from 'next/link';
 import {
     FaUniversity,
@@ -13,7 +15,18 @@ import {
 import PageTransition from '../components/PageTransition';
 
 const OthersPage = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            toast.success('退出成功');
+            router.push('/login');
+        } catch (error) {
+            toast.error('退出失败，请重试');
+        }
+    };
 
     const menuItems = [
         {
@@ -64,7 +77,7 @@ const OthersPage = () => {
             title: '退出登录',
             description: '退出当前账号',
             icon: FaSignOutAlt,
-            path: '/logout',
+            onClick: handleLogout,
             color: 'bg-red-500'
         }] : [])
     ];
@@ -76,23 +89,43 @@ const OthersPage = () => {
                     <h1 className="text-xl lg:text-2xl font-bold text-gray-800 mb-4 lg:mb-6">更多功能</h1>
                     <div className="grid grid-cols-2 gap-3 lg:gap-4">
                         {menuItems.map((item, index) => (
-                            <Link
-                                key={index}
-                                href={item.path}
-                                className="block transition-transform duration-200 hover:-translate-y-1"
-                            >
-                                <div className="bg-white rounded-xl shadow p-4 h-full">
-                                    <div className={`inline-flex p-2 rounded-lg ${item.color} text-white mb-3`}>
-                                        <item.icon className="text-xl" />
+                            item.onClick ? (
+                                // 带点击事件的菜单项（如退出登录）
+                                <button
+                                    key={index}
+                                    onClick={item.onClick}
+                                    className="block w-full text-left transition-transform duration-200 hover:-translate-y-1"
+                                >
+                                    <div className="bg-white rounded-xl shadow p-4 h-full">
+                                        <div className={`inline-flex p-2 rounded-lg ${item.color} text-white mb-3`}>
+                                            <item.icon className="text-xl" />
+                                        </div>
+                                        <h2 className="text-base font-bold text-gray-800 mb-1">
+                                            {item.title}
+                                        </h2>
+                                        <p className="text-xs text-gray-600">
+                                            {item.description}
+                                        </p>
                                     </div>
-                                    <h2 className="text-base font-bold text-gray-800 mb-1">
-                                        {item.title}
-                                    </h2>
-                                    <p className="text-xs text-gray-600">
-                                        {item.description}
-                                    </p>
-                                </div>
-                            </Link>
+                                </button>
+                            ) : (
+                                <Link
+                                    key={index}
+                                    href={item.path}
+                                    className="block transition-transform duration-200 hover:-translate-y-1"
+                                >
+                                    <div className="bg-white rounded-xl shadow p-4 h-full">
+                                        <div className={`inline-flex p-2 rounded-lg ${item.color} text-white mb-3`}>
+                                            <item.icon className="text-xl" />
+                                        </div>
+                                        <h2 className="text-base font-bold text-gray-800 mb-1">
+                                            {item.title}
+                                        </h2>
+                                        <p className="text-xs text-gray-600">
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                </Link>)
                         ))}
                     </div>
                 </div>
