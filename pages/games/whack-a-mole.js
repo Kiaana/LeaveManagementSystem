@@ -128,9 +128,9 @@ const WhackAMole = () => {
           let type = 'normal';
           if (rand < 0.05) {
             type = 'gold'; // 5%概率生成金色地鼠
-          } else if (rand < 0.10) {
-            type = 'bomb'; // 5%概率生成炸弹地鼠
-          } else if (rand < 0.30) {
+          } else if (rand < 0.15) {
+            type = 'bomb'; // 10%概率生成炸弹地鼠
+          } else if (rand < 0.35) {
             type = 'fake'; // 20%概率生成假地鼠
           }
 
@@ -221,7 +221,7 @@ const WhackAMole = () => {
       setLastWhackTime(currentTime);
 
       // 增加时间奖励
-      setTimeLeft(prev => Math.min(prev + 1, 60)); // 限制最大时间为99秒
+      setTimeLeft(prev => Math.min(prev + 0.5, 60)); // 限制最大时间为99秒
 
       // 升级机制
       const pointsForLevelUp = type === 'normal' ? 10 : 15;
@@ -348,8 +348,6 @@ const WhackAMole = () => {
                 </div>
               )}
 
-              {/* 为移动端状态栏留出空间 */}
-              <div className="h-12 lg:hidden"></div>
               {/* 游戏结束统计 */}
               {!isPlaying && timeLeft === 0 && (
                 <div className="bg-white rounded-xl shadow-lg p-8 mb-6 text-center">
