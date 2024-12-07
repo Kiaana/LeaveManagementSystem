@@ -16,8 +16,8 @@ const moleTypes = {
   },
   fake: {
     image: mole2,
-    score: -1,
-    description: '假地鼠：点击扣1分',
+    score: -2,
+    description: '假地鼠：点击扣2分',
   },
   gold: {
     image: mole3,
@@ -77,31 +77,34 @@ const WhackAMole = () => {
     setLastWhackTime(0);
   };
 
-  // 游戏结束处理
-  const handleGameEnd = () => {
+  // 使用 useCallback 包装 handleGameEnd 以避免无限循环
+  const handleGameEnd = useCallback(() => {
     setIsPlaying(false);
     updateHighScore(score);
     setActiveMoles([]);
-    // 不重置最高连击，用于显示在结果界面
     setLastWhackTime(0);
-  };
+  }, [score, updateHighScore]); // 添加必要的依赖项
 
-  // 游戏计时器
+  // 修改游戏计时器
   useEffect(() => {
     let timer;
     if (isPlaying && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            handleGameEnd();
+            handleGameEnd(); // 在这里调用
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
+    } else if (timeLeft === 0) {
+      // 确保在时间归零时结束游戏
+      handleGameEnd();
     }
+
     return () => clearInterval(timer);
-  }, [isPlaying, timeLeft]);
+  }, [isPlaying, timeLeft, handleGameEnd]); // 添加 handleGameEnd 到依赖项
 
   // 地鼠出现逻辑
   useEffect(() => {
@@ -156,7 +159,7 @@ const WhackAMole = () => {
           // 如果地鼠还存在（未被点击），则需要进行惩罚
           if (stillExists && (mole.type === 'normal' || mole.type === 'gold')) {
             // 扣分
-            // setScore(prev => Math.max(prev - 1, 0));
+            setScore(prev => Math.max(prev - 1, 0));
             // 减少时间
             setTimeLeft(prev => Math.max(prev - 2, 0));
             // 重置连击
@@ -204,7 +207,7 @@ const WhackAMole = () => {
           }
           // 连击达到5次给予额外奖励
           if (newCombo >= 5) {
-            pointsToAdd += 5;
+            pointsToAdd += 3;
             playSound('combo');
             return 0; // 重置连击
           }
@@ -218,7 +221,7 @@ const WhackAMole = () => {
       setLastWhackTime(currentTime);
 
       // 增加时间奖励
-      setTimeLeft(prev => Math.min(prev + 1, 99)); // 限制最大时间为99秒
+      setTimeLeft(prev => Math.min(prev + 1, 60)); // 限制最大时间为99秒
 
       // 升级机制
       const pointsForLevelUp = type === 'normal' ? 10 : 15;
@@ -231,10 +234,14 @@ const WhackAMole = () => {
       playSound('whack');
     } else if (type === 'fake') {
       setScore(prev => Math.max(prev + moleTypes[type].score, 0));
+      // 减少时间
+      setTimeLeft(prev => Math.max(prev - 2, 0));
       setCombo(0);
       playSound('mistake');
     } else if (type === 'bomb') {
       setScore(prev => Math.max(prev + moleTypes[type].score, 0));
+      // 减少时间
+      setTimeLeft(prev => Math.max(prev - 5, 0));
       setCombo(0);
       playSound('bomb');
     }
@@ -317,6 +324,32 @@ const WhackAMole = () => {
 
             {/* 右侧游戏区域 */}
             <div className="lg:col-span-2">
+              {/* 移动端状态栏 */}
+              {isPlaying && (
+                <div className="fixed top-0 left-0 right-0 bg-white shadow-md p-2 z-50 lg:hidden">
+                  <div className="container mx-auto flex justify-between items-center max-w-md">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-gray-800">
+                        <span className="text-sm">得分:</span>
+                        <span className="text-lg font-bold ml-1">{score}</span>
+                      </div>
+                      <div className="text-blue-600">
+                        <span className="text-sm">时间:</span>
+                        <span className="text-lg font-bold ml-1">{timeLeft}秒</span>
+                      </div>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${combo >= 5
+                        ? 'bg-yellow-400 text-white animate-pulse shadow-lg'
+                        : 'bg-gray-100 text-gray-700'
+                      }`}>
+                      连击: {combo}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 为移动端状态栏留出空间 */}
+              <div className="h-12 lg:hidden"></div>
               {/* 游戏结束统计 */}
               {!isPlaying && timeLeft === 0 && (
                 <div className="bg-white rounded-xl shadow-lg p-8 mb-6 text-center">
