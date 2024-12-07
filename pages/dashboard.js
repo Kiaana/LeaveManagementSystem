@@ -22,6 +22,7 @@ import {
     FaTemperatureLow,
     FaQuestionCircle,
     FaClipboardList,
+    FaBirthdayCake,
 } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -129,11 +130,13 @@ const Dashboard = () => {
     const [weather, setWeather] = useState(null);
     const [dormRankings, setDormRankings] = useState([]);
     const [roomInspections, setRoomInspections] = useState([]);
+    const [birthdays, setBirthdays] = useState([]);
     const [loadingStats, setLoadingStats] = useState(true);
     const [loadingDutyInfo, setLoadingDutyInfo] = useState(true);
     const [loadingWeather, setLoadingWeather] = useState(true);
     const [loadingDormRankings, setLoadingDormRankings] = useState(true);
     const [loadingInspections, setLoadingInspections] = useState(true);
+    const [loadingBirthdays, setLoadingBirthdays] = useState(true);
     const [isDarkMode, setIsDarkMode] = useState(true);
     const memoizedRoomInspections = useMemo(() => roomInspections, [roomInspections]);
 
@@ -144,6 +147,7 @@ const Dashboard = () => {
     const isFetchingWeather = useRef(false);
     const isFetchingDormRankings = useRef(false);
     const isFetchingInspections = useRef(false);
+    const isFetchingBirthdays = useRef(false);
 
     // 通用的防抖函数，接收一个 useRef 引用
     const fetchWithDebounce = async (fetchFunction, isFetchingRef) => {
@@ -174,6 +178,7 @@ const Dashboard = () => {
         fetchWithDebounce(fetchWeather, isFetchingWeather);
         fetchWithDebounce(fetchDormRankingsData, isFetchingDormRankings);
         fetchWithDebounce(fetchRoomInspections, isFetchingInspections);
+        fetchWithDebounce(fetchBirthdays, isFetchingBirthdays);
 
         // 定时更新数据，每 20 秒请求一次
         const statsInterval = setInterval(() => {
@@ -190,10 +195,15 @@ const Dashboard = () => {
             fetchWithDebounce(fetchWeather, isFetchingWeather);
         }, 20000); // 修正为20秒
 
+        const birthdaysInterval = setInterval(() => {
+            fetchWithDebounce(fetchBirthdays, isFetchingBirthdays);
+        }, 86400000); // 每天更新一次
+
         return () => {
             clearInterval(statsInterval);
             clearInterval(dutyInfoInterval);
             clearInterval(weatherInterval);
+            clearInterval(birthdaysInterval);
         };
     }, []);
 
@@ -254,7 +264,7 @@ const Dashboard = () => {
                 axiosInstance.get('/dormitories/rankings', { params: { range: 'today' } }),
                 axiosInstance.get('/dormitories/rankings', { params: { range: 'week' } })
             ]);
-    
+
             const combinedData = weekResponse.data.data.map(weekDorm => {
                 const todayData = todayResponse.data.data.find(
                     todayDorm => todayDorm.room_number === weekDorm.room_number
@@ -264,7 +274,7 @@ const Dashboard = () => {
                     today_score: todayData?.total_score || 0
                 };
             });
-    
+
             if (!isEqual(combinedData, dormRankings)) { // 仅在数据变化时更新状态
                 setDormRankings(combinedData);
             }
@@ -290,6 +300,18 @@ const Dashboard = () => {
         }
     };
 
+    // 创建获取生日信息的函数
+    const fetchBirthdays = async () => {
+        try {
+            const res = await axiosInstance.get('/birthdays');
+            setBirthdays(res.data.today || []);
+        } catch (error) {
+            toast.error('获取生日信息失败');
+        } finally {
+            setLoadingBirthdays(false);
+        }
+    };
+
     // 处理主题切换
     const toggleTheme = () => {
         setIsDarkMode(!isDarkMode);
@@ -310,10 +332,10 @@ const Dashboard = () => {
         const columns = [[], [], []];
         data.forEach((dorm) => {
             const columnIndex = columns.findIndex(col =>
-            col.length === Math.min(...columns.map(col => col.length))
+                col.length === Math.min(...columns.map(col => col.length))
             );
             if (columnIndex !== -1) {
-            columns[columnIndex].push(dorm);
+                columns[columnIndex].push(dorm);
             }
         });
 
@@ -369,7 +391,7 @@ const Dashboard = () => {
             </div>
         );
     };
-    
+
 
     // 获取请假去向分布图表数据
     const getDestinationChartData = () => {
@@ -411,7 +433,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* 顶部信息栏 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                     {/* 当前时间 */}
                     <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg flex flex-col items-center transition-colors duration-300`}>
                         <FaClock className={`text-4xl mb-4 animate-pulse ${isDarkMode ? 'text-yellow-400' : 'text-yellow-400'}`} />
@@ -461,6 +483,33 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* 生日信息 */}
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-lg transition-colors duration-300`}>
+                        {/* 图标区域 */}
+                        <h3 className={`text-xl font-medium mb-4 flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                            <FaBirthdayCake className={`mr-2 text-3xl ${isDarkMode ? 'text-pink-400' : 'text-pink-500'}`} /> 今日生日
+                        </h3>
+
+                        {/* 名字显示区域 - 在剩余空间内垂直居中 */}
+                        <div className="flex-1 flex items-center justify-center min-h-[100px]">
+                            {loadingBirthdays ? (
+                                <FaSpinner className="animate-spin text-3xl" />
+                            ) : birthdays.length > 0 ? (
+                                <div className="w-full flex flex-wrap justify-center items-center">
+                                    {birthdays.map((person, index) => (
+                                        <div key={index} className="w-1/3 text-center text-xl font-medium py-1">
+                                            {person.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className={`text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    今日无人过生日
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
