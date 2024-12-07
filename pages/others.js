@@ -10,7 +10,8 @@ import {
     FaBirthdayCake,
     FaUserCircle,
     FaCog,
-    FaSignOutAlt
+    FaSignOutAlt,
+    FaGamepad
 } from 'react-icons/fa';
 import PageTransition from '../components/PageTransition';
 
@@ -71,6 +72,14 @@ const OthersPage = () => {
             icon: FaUserCircle,
             path: '/profile',
             color: 'bg-purple-500'
+        },
+        // 游戏
+        {
+            title: '游戏',
+            description: '玩一些小游戏',
+            icon: FaGamepad,
+            path: '/games',
+            color: 'bg-green-500'
         },
         // 仅超级管理员可见
         ...(user?.role === 'superadmin' ? [{
