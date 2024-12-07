@@ -6,7 +6,6 @@ import { FaUser, FaBirthdayCake, FaLock } from 'react-icons/fa';
 import PageTransition from '../components/PageTransition';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
-import { useAuth } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
 import axiosInstance from '../services/axiosConfig';
 
