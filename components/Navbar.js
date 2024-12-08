@@ -41,7 +41,7 @@ const Navbar = () => {
 
     const systemNavItems = user ? [
         { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
-        ...((['admin', 'superadmin'].includes(user.role)) ? [
+        ...((['负责人', '干部', '管理员'].includes(user.role)) ? [
             { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' }
         ] : []),
         { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
@@ -52,7 +52,7 @@ const Navbar = () => {
         { path: '/birthdays', icon: FaBirthdayCake, label: '生日' },
         ...(user ? [
             { path: '/profile', icon: FaUserCircle, label: '我的' },
-            ...((user.role === 'superadmin') ? [
+            ...((user.role === '管理员') ? [
                 { path: '/admin', icon: FaUniversity, label: '管理' }
             ] : []),
         ] : []),
@@ -63,7 +63,7 @@ const Navbar = () => {
         { path: '/', icon: FaHome, label: '首页' },
         { path: '/leave_request', icon: FaCalendarAlt, label: '请假' },
         // 管理员和超级管理员才显示销假
-        ...(['admin', 'superadmin'].includes(user.role) ? [
+        ...(['负责人', '干部', '管理员'].includes(user.role) ? [
             { path: '/cancel_leave', icon: FaSignOutAlt, label: '销假' }
         ] : []),
         { path: '/room_inspection', icon: FaClipboardList, label: '内务' },
@@ -192,7 +192,7 @@ const Navbar = () => {
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-50">
                 <div className={`grid ${!user
                         ? 'grid-cols-2' // 未登录时显示2列
-                        : (['admin', 'superadmin'].includes(user.role)
+                        : (['负责人', '干部', '管理员'].includes(user.role)
                             ? 'grid-cols-5' // 管理员显示5列
                             : 'grid-cols-4' // 普通用户显示4列
                         )

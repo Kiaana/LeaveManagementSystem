@@ -265,7 +265,7 @@ const LeavesPage = () => {
 
 
   return (
-    <ProtectedRoute requiredRole={['admin', 'superadmin']}>
+    <ProtectedRoute requiredRole={['管理员']}>
       <PageTransition>
         <div className="min-h-screen bg-white py-8">
           <div className="container mx-auto px-4">

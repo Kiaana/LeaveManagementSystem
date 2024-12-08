@@ -47,7 +47,7 @@ const EditLeaveContent = () => {
         const data = res.data;
 
         // 检查权限
-        if (user.role !== 'superadmin' && data.user.id !== user.id) {
+        if (user.role !== '管理员' && data.user.id !== user.id) {
           toast.error('您无权编辑此请假记录');
           router.push('/overview');
           return;

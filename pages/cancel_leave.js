@@ -29,14 +29,21 @@ const CancelLeavePage = () => {
   const fetchLeaves = async (page = 1) => {
     setLoading(true);
     try {
-      const params = {
+      let queryParams = {
         page,
         per_page: pageInfo.per_page,
-        ...filters,
-        ...(user.role === 'admin' ? { approver: user.name } : {})
+        ...filters
       };
-
-      const response = await axiosInstance.get('/leave_requests', { params });
+  
+      // 根据用户角色添加不同的查询参数
+      if (user.role === '负责人') {
+        queryParams.approver = user.name;
+      } else if (user.role === '干部') {
+        queryParams.approver_role = '干部';
+      }
+      // 管理员不需要添加额外的查询参数
+  
+      const response = await axiosInstance.get('/leave_requests', { params: queryParams });
       setLeaves(response.data.data);
       setPageInfo({
         total: response.data.total,
@@ -76,7 +83,7 @@ const CancelLeavePage = () => {
   };
 
   return (
-    <ProtectedRoute requiredRole={['admin', 'superadmin']}>
+    <ProtectedRoute requiredRole={['负责人', '干部', '管理员']}>
       <PageTransition>
         <div className="min-h-screen bg-white py-8">
           <div className="container mx-auto px-4">

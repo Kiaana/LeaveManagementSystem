@@ -155,10 +155,16 @@ const UsersPage = () => {
     // 获取角色对应的样式
     const getRoleBadgeStyle = (role) => {
         switch (role) {
-            case 'superadmin':
-                return 'bg-red-100 text-red-800';
-            case 'admin':
+            case '管理员':
                 return 'bg-blue-100 text-blue-800';
+            case '干部':
+                return 'bg-green-100 text-green-800';
+            case '负责人':
+                return 'bg-purple-100 text-purple-800';
+            case '排长':
+                return 'bg-yellow-100 text-yellow-800';
+            case '班长':
+                return 'bg-indigo-100 text-indigo-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -216,7 +222,7 @@ const UsersPage = () => {
     ];
 
     return (
-        <ProtectedRoute requiredRole="superadmin">
+        <ProtectedRoute requiredRole="管理员">
             <PageTransition>
                 <div className="min-h-screen bg-white py-2 lg:py-8">
                     <div className="container mx-auto px-4">
