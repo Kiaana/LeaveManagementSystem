@@ -130,23 +130,17 @@ const UsersPage = () => {
     };
 
     // 修改用户权限
-    const handleRoleChange = async (userId, currentRole) => {
-        const newRole = currentRole === 'admin' ? 'user' : 'admin';
-        if (currentRole === 'superadmin') {
-            toast.error('无法修改 superadmin 的角色');
-            return;
-        }
-
-        if (!window.confirm(`确定要将此用户权限修改为 ${newRole} 吗？`)) return;
+    const handleRoleChange = async (userId, newRole) => {
+        if (!window.confirm(`确定要将此用户角色修改为 ${newRole} 吗？`)) return;
 
         setActionLoading(true);
         try {
             await axiosInstance.put(`/users/${userId}/role`, { role: newRole });
-            toast.success('用户权限修改成功');
+            toast.success('用户角色修改成功');
             fetchUsers(pageInfo.current_page);
         } catch (error) {
-            toast.error(error.response?.data?.error || '修改权限失败');
-            console.error('修改权限失败:', error);
+            toast.error(error.response?.data?.error || '修改角色失败');
+            console.error('修改角色失败:', error);
         } finally {
             setActionLoading(false);
         }
@@ -169,6 +163,8 @@ const UsersPage = () => {
                 return 'bg-gray-100 text-gray-800';
         }
     };
+
+    const AVAILABLE_ROLES = ['学员', '负责人', '干部', '排长', '班长', '管理员'];
 
     // 定义表格列配置
     const columns = [
@@ -198,15 +194,23 @@ const UsersPage = () => {
             accessor: 'actions',
             render: (_, user) => (
                 <div className="flex justify-end space-x-2">
-                    <Button
-                        onClick={() => handleRoleChange(user.id, user.role)}
-                        variant={user.role === 'admin' ? 'info' : 'success'}
-                        size="sm"
-                        disabled={actionLoading || user.role === 'superadmin'}
-                    >
-                        <FaUserShield className="mr-1" />
-                        {user.role === 'admin' ? '取消管理员' : '设为管理员'}
-                    </Button>
+                    {/* 角色修改下拉框 */}
+                    <div className="relative">
+                        <select
+                            value={user.role}
+                            onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                            disabled={actionLoading || user.role === 'superadmin'}
+                            className="w-32 px-2 py-1 text-sm border rounded-lg 
+                                focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                                disabled:bg-gray-100 disabled:text-gray-500"
+                        >
+                            {AVAILABLE_ROLES.map(role => (
+                                <option key={role} value={role}>
+                                    {role}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <Button
                         onClick={() => handleDelete(user.id)}
                         variant="danger"
@@ -356,13 +360,13 @@ const UsersPage = () => {
                                         <select
                                             {...register('role')}
                                             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            defaultValue="user"
+                                            defaultValue="学员"
                                         >
-                                            <option value="user">用户</option>
-                                            <option value="admin">管理员</option>
-                                            <option value="superadmin" disabled>
-                                                超级管理员
-                                            </option>
+                                            {AVAILABLE_ROLES.map(role => (
+                                                <option key={role} value={role}>
+                                                    {role}
+                                                </option>
+                                            ))}
                                         </select>
                                     </FormField>
 
