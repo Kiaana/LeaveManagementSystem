@@ -1,12 +1,13 @@
 // pages/suggestions/mine.js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FaArrowLeft, FaSpinner, FaClock, FaCheck, FaUser, FaEyeSlash } from 'react-icons/fa';
+import { FaArrowLeft, FaSpinner, FaClock, FaCheck, FaUser, FaEyeSlash, FaEdit, FaTrash } from 'react-icons/fa';
 import axiosInstance from '../../services/axiosConfig';
 import { toast } from 'react-toastify';
 import PageTransition from '../../components/PageTransition';
 import Pagination from '../../components/Pagination';
 import { formatDate } from '../../utils/dateFormatter';
+import Button from '../../components/Button';
 
 const MineSuggestions = () => {
     const router = useRouter();
@@ -43,52 +44,169 @@ const MineSuggestions = () => {
         fetchSuggestions();
     }, []);
 
-    const SuggestionCard = ({ suggestion }) => (
-        <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 mb-4 hover:shadow-md transition-shadow">
-            {/* 建议内容 */}
-            <div className="mb-4">
-                <p className="text-gray-800 whitespace-pre-line">{suggestion.content}</p>
-            </div>
+    const SuggestionCard = ({ suggestion }) => {
+        const [isEditing, setIsEditing] = useState(false);
+        const [editContent, setEditContent] = useState(suggestion.content);
+        const [editAnonymous, setEditAnonymous] = useState(suggestion.is_anonymous);
+        const [actionLoading, setActionLoading] = useState(false);
 
-            {/* meta信息 */}
-            <div className="flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center space-x-4">
-                    <span className="flex items-center">
-                        {suggestion.is_anonymous ? (
-                            <FaEyeSlash className="mr-1" />
-                        ) : (
-                            <FaUser className="mr-1" />
-                        )}
-                        {suggestion.is_anonymous ? '匿名' : '实名'}
-                    </span>
-                    <span>{formatDate(suggestion.created_at, 'datetime')}</span>
-                </div>
-                <span className={`flex items-center ${suggestion.reply ? 'text-green-500' : 'text-gray-500'
-                    }`}>
-                    {suggestion.reply ? (
-                        <FaCheck className="mr-1" />
-                    ) : (
-                        <FaClock className="mr-1" />
-                    )}
-                    {suggestion.reply ? '已回复' : '待回复'}
-                </span>
-            </div>
+        const handleEdit = async () => {
+            if (!editContent.trim()) {
+                toast.error('请输入建议内容');
+                return;
+            }
 
-            {/* 回复内容 */}
-            {suggestion.reply && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">回复：</h4>
-                    <div className="bg-gray-50 rounded p-3">
-                        <p className="text-gray-800">{suggestion.reply}</p>
-                        <div className="mt-2 text-xs text-gray-500 flex justify-between items-center">
-                            <span>回复人：{suggestion.replier?.name || '未知'}</span>
-                            <span>{formatDate(suggestion.reply_at, 'datetime')}</span>
+            setActionLoading(true);
+            try {
+                await axiosInstance.put(`/suggestions/${suggestion.id}`, {
+                    content: editContent,
+                    is_anonymous: editAnonymous
+                });
+                toast.success('修改成功');
+                setIsEditing(false);
+                fetchSuggestions(pageInfo.current_page);
+            } catch (error) {
+                toast.error(error.response?.data?.error || '修改失败');
+            } finally {
+                setActionLoading(false);
+            }
+        };
+
+        const handleDelete = async () => {
+            setActionLoading(true);
+            try {
+                await axiosInstance.delete(`/suggestions/${suggestion.id}`);
+                toast.success('删除成功');
+                fetchSuggestions(pageInfo.current_page);
+            } catch (error) {
+                toast.error(error.response?.data?.error || '删除失败');
+            } finally {
+                setActionLoading(false);
+            }
+        };
+
+        return (
+            <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 mb-4 hover:shadow-md transition-shadow">
+                {isEditing ? (
+                    <div className="space-y-4">
+                        <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-32"
+                            placeholder="请输入建议内容..."
+                        />
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id={`anonymous-${suggestion.id}`}
+                                checked={editAnonymous}
+                                onChange={(e) => setEditAnonymous(e.target.checked)}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <label htmlFor={`anonymous-${suggestion.id}`} className="ml-2 text-sm text-gray-700">
+                                匿名提交
+                            </label>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                    setIsEditing(false);
+                                    setEditContent(suggestion.content);
+                                    setEditAnonymous(suggestion.is_anonymous);
+                                }}
+                            >
+                                取消
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={handleEdit}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? (
+                                    <>
+                                        <FaSpinner className="animate-spin mr-2" />
+                                        保存中...
+                                    </>
+                                ) : '保存修改'}
+                            </Button>
                         </div>
                     </div>
+                ) : (
+                    <>
+                        <div className="space-y-3">
+                            <p className="text-gray-800 whitespace-pre-line">{suggestion.content}</p>
+                            {!suggestion.reply && (
+                                <div className="flex justify-end space-x-3">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setIsEditing(true)}
+                                    >
+                                        <FaEdit className="mr-1" />
+                                        修改
+                                    </Button>
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={handleDelete}
+                                        disabled={actionLoading}
+                                    >
+                                        <FaTrash className="mr-1" />
+                                        删除
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+                {/* 建议内容 */}
+                <div className="mb-4">
+                    <p className="text-gray-800 whitespace-pre-line">{suggestion.content}</p>
                 </div>
-            )}
-        </div>
-    );
+
+                {/* meta信息 */}
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center space-x-4">
+                        <span className="flex items-center">
+                            {suggestion.is_anonymous ? (
+                                <FaEyeSlash className="mr-1" />
+                            ) : (
+                                <FaUser className="mr-1" />
+                            )}
+                            {suggestion.is_anonymous ? '匿名' : '实名'}
+                        </span>
+                        <span>{formatDate(suggestion.created_at, 'datetime')}</span>
+                    </div>
+                    <span className={`flex items-center ${suggestion.reply ? 'text-green-500' : 'text-gray-500'
+                        }`}>
+                        {suggestion.reply ? (
+                            <FaCheck className="mr-1" />
+                        ) : (
+                            <FaClock className="mr-1" />
+                        )}
+                        {suggestion.reply ? '已回复' : '待回复'}
+                    </span>
+                </div>
+
+                {/* 回复内容 */}
+                {suggestion.reply && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">回复：</h4>
+                        <div className="bg-gray-50 rounded p-3">
+                            <p className="text-gray-800">{suggestion.reply}</p>
+                            <div className="mt-2 text-xs text-gray-500 flex justify-between items-center">
+                                <span>回复人：{suggestion.replier?.name || '未知'}</span>
+                                <span>{formatDate(suggestion.reply_at, 'datetime')}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <PageTransition>
