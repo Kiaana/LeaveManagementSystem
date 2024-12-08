@@ -153,7 +153,7 @@ const Navbar = () => {
                             <span>请销假登记系统</span>
                         </Link>
 
-                        <div className="flex items-center space-x-1 overflow-x-auto">
+                        <div className="flex items-center space-x-1">
                             {mainNavItems.map(renderNavItem)}
                             {systemNavItems.map((item) =>
                                 item.items ? (
