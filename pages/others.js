@@ -11,7 +11,8 @@ import {
     FaUserCircle,
     FaCog,
     FaSignOutAlt,
-    FaGamepad
+    FaGamepad,
+    FaInbox
 } from 'react-icons/fa';
 import PageTransition from '../components/PageTransition';
 
@@ -58,7 +59,6 @@ const OthersPage = () => {
             path: '/birthdays',
             color: 'bg-pink-500'
         },
-        // 值班信息
         {
             title: '值班信息',
             description: '查看值班信息',
@@ -81,8 +81,16 @@ const OthersPage = () => {
             path: '/games',
             color: 'bg-green-500'
         },
-        // 仅超级管理员可见
-        ...(user?.role === 'superadmin' ? [{
+        // 意见箱
+        {
+            title: '意见箱',
+            description: '为学院队建设添砖加瓦',
+            icon: FaInbox,
+            path: '/suggestions',
+            color: 'bg-blue-500'
+        },
+        // 仅管理员可见
+        ...(user?.role === '管理员' ? [{
             title: '系统管理',
             description: '管理用户和系统设置',
             icon: FaCog,
