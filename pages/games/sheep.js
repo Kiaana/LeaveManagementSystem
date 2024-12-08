@@ -133,7 +133,7 @@ const YangGame = () => {
         // 打乱卡片顺序
         const shuffledCards = [...allCards].sort(() => Math.random() - 0.5);
     
-        // 生成三层卡片
+        // 生成卡片
         const newTiles = [];
         let cardIndex = 0;
     
@@ -251,7 +251,7 @@ const YangGame = () => {
                                     <div
                                         id={`tile-${tile.id}`}
                                         key={tile.id}
-                                        className={`absolute flex items-center justify-center bg-white border-2 rounded-xl 
+                                        className={`absolute flex items-center justify-center bg-white border-2 rounded-sm
                                             transition-all duration-300 ease-out transform ${
                                                 tile.blocked
                                                     ? 'border-gray-300 opacity-60 scale-95 cursor-not-allowed'
