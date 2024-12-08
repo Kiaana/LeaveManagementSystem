@@ -26,7 +26,6 @@ const ProfileContent = () => {
         setProfileData(res.data);
         resetInfo({
           birthday: res.data.birthday || '',
-          lunar_birthday: res.data.lunar_birthday || '',
           is_lunar_birthday: res.data.is_lunar_birthday
         });
       } catch (error) {
@@ -42,7 +41,6 @@ const ProfileContent = () => {
     try {
       const payload = {
         birthday: data.birthday || undefined,
-        lunar_birthday: data.lunar_birthday || undefined,
         is_lunar_birthday: data.is_lunar_birthday === 'true'
       };
 
@@ -151,18 +149,10 @@ const ProfileContent = () => {
                 </div>
 
                 <form onSubmit={handleSubmitInfo(onSubmitInfo)} className="space-y-6">
-                  <FormField label="阳历生日" icon={FaBirthdayCake} error={errorsInfo.birthday}>
+                  <FormField label="出生日期" icon={FaBirthdayCake} error={errorsInfo.birthday}>
                     <input
                       type="date"
                       {...registerInfo('birthday')}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-transparent focus:outline-none focus:ring-2"
-                    />
-                  </FormField>
-
-                  <FormField label="农历生日" icon={FaBirthdayCake} error={errorsInfo.lunar_birthday}>
-                    <input
-                      type="date"
-                      {...registerInfo('lunar_birthday')}
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-transparent focus:outline-none focus:ring-2"
                     />
                   </FormField>
