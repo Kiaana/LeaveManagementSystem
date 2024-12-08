@@ -12,6 +12,13 @@ const GamesPage = () => {
       path: '/games/whack-a-mole',
       color: 'bg-green-500'
     },
+    {
+      title: '羊了个羊',
+      description: '消除配对小游戏，考验你的记忆力和策略！',
+      icon: FaGamepad,
+      path: '/games/sheep',
+      color: 'bg-blue-500'
+    }
     // 可以在这里添加更多游戏...
   ];
 
