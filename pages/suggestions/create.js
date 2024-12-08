@@ -66,7 +66,7 @@ const CreateSuggestion = () => {
                                 />
                             </FormField>
 
-                            <div className="flex items-center">
+                            {/* <div className="flex items-center">
                                 <input
                                     type="checkbox"
                                     {...register('is_anonymous')}
@@ -79,7 +79,7 @@ const CreateSuggestion = () => {
                                 >
                                     匿名提交
                                 </label>
-                            </div>
+                            </div> */}
 
                             <div className="flex flex-col space-y-3 pt-4">
                                 <Button
