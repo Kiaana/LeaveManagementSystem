@@ -95,7 +95,7 @@ const MineSuggestions = () => {
                             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-32"
                             placeholder="请输入建议内容..."
                         />
-                        {/* <div className="flex items-center">
+                        <div className="flex items-center">
                             <input
                                 type="checkbox"
                                 id={`anonymous-${suggestion.id}`}
@@ -106,7 +106,7 @@ const MineSuggestions = () => {
                             <label htmlFor={`anonymous-${suggestion.id}`} className="ml-2 text-sm text-gray-700">
                                 匿名提交
                             </label>
-                        </div> */}
+                        </div>
                         <div className="flex justify-end space-x-3">
                             <Button
                                 variant="secondary"

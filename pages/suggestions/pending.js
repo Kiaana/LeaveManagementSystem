@@ -89,7 +89,7 @@ const PendingSuggestions = () => {
                                 {suggestion.is_anonymous ? (
                                     <>
                                         <FaEyeSlash className="mr-1.5" />
-                                        <span className="font-medium">匿名用户</span>
+                                        <span className="font-medium">{suggestion.user?.name}（匿名）</span>
                                     </>
                                 ) : (
                                     <>
