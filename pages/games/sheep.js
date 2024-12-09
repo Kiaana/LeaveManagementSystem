@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PageTransition from '../../components/PageTransition';
 
 // 卡片类型定义
-const CARD_TYPES = ['🐑', '🐮', '🐷', '🐰', '🐶', '🐱', '🤡']
+const CARD_TYPES = ['🐑', '🐮', '🐷', '🐰', '🐶', '🐱', '🤡', '🐔', '🐭']
 const CARDS_PER_TYPE = 30;
 const MAX_STORAGE = 7;
 const LAYERS = 5; // 总层数
@@ -123,7 +123,7 @@ const YangGame = () => {
             setRemainingCards(prev => {
                 const newCount = prev - 1;
                 // 检查游戏胜利条件
-                if (tiles.length === 1 && selectedTiles.length === 0) {
+                if (tiles.length === 0 && selectedTiles.length === 0) {
                     setGameStatus('won');
                     showNotification('恭喜通关！', 'success');
                 }
@@ -139,30 +139,37 @@ const YangGame = () => {
     const initGame = useCallback(() => {
         setIsProcessing(false);
         const { width: gridWidth, height: gridHeight } = calculateGridSize();
-        
+
+        // 计算每层可放置的最大卡片数
+        const maxCardsPerLayer = Math.floor((gridWidth * gridHeight) / 8); // 每个卡片占用4个格子
+        const totalPossibleCards = maxCardsPerLayer * LAYERS;
+
+        // 确保每种卡片的数量是3的倍数
+        const cardCountPerType = Math.floor(totalPossibleCards / CARD_TYPES.length / 3) * 3;
+
         const allCards = [];
         CARD_TYPES.forEach(type => {
             for (let i = 0; i < CARDS_PER_TYPE; i++) {
                 allCards.push(type);
             }
         });
-    
+
         const shuffledCards = [...allCards].sort(() => Math.random() - 0.5);
         const newTiles = [];
         let cardIndex = 0;
-    
+
         // 创建网格占用状态数组
         const createEmptyGrid = () => {
             return Array(gridHeight).fill().map(() => Array(gridWidth).fill(false));
         };
-    
+
         // 检查2x2区域是否可用
         const isAreaAvailable = (grid, row, col) => {
             if (row + 1 >= gridHeight || col + 1 >= gridWidth) return false;
             return !grid[row][col] && !grid[row][col + 1] &&
-                   !grid[row + 1][col] && !grid[row + 1][col + 1];
+                !grid[row + 1][col] && !grid[row + 1][col + 1];
         };
-    
+
         // 标记2x2区域为已占用
         const markArea = (grid, row, col) => {
             grid[row][col] = true;
@@ -170,12 +177,12 @@ const YangGame = () => {
             grid[row + 1][col] = true;
             grid[row + 1][col + 1] = true;
         };
-    
+
         // 获取当前层可用的随机位置
         const getRandomAvailablePosition = (grid, isOddLayer) => {
             const available = [];
             const startOffset = isOddLayer ? 0 : 1;
-            
+
             for (let row = startOffset; row < gridHeight - 1; row += 2) {
                 for (let col = startOffset; col < gridWidth - 1; col += 2) {
                     if (isAreaAvailable(grid, row, col)) {
@@ -183,30 +190,32 @@ const YangGame = () => {
                     }
                 }
             }
-    
+
             if (available.length === 0) return null;
             return available[Math.floor(Math.random() * available.length)];
         };
-    
+
         // 为每层生成卡片
         for (let layer = 0; layer < LAYERS; layer++) {
             const grid = createEmptyGrid();
             const isOddLayer = layer % 2 === 1;
-            const maxCardsPerLayer = Math.floor((gridWidth * gridHeight) / 8); // 每个卡片占用4个格子
             const cardsPerLayer = Math.min(maxCardsPerLayer, Math.floor(shuffledCards.length / LAYERS));
             let placedCards = 0;
-    
-            while (placedCards < cardsPerLayer && cardIndex < shuffledCards.length) {
+
+            // 调整每层的卡片数量，确保总数是3的倍数
+            const targetCardsForLayer = Math.floor(cardsPerLayer / 3) * 3;
+
+            while (placedCards < targetCardsForLayer && cardIndex < shuffledCards.length) {
                 const position = getRandomAvailablePosition(grid, isOddLayer);
                 if (!position) break;
-    
+
                 const { row, col } = position;
                 markArea(grid, row, col);
-    
+
                 // 计算实际位置
                 const x = col * (CARD_SIZE / 2);
                 const y = row * (CARD_SIZE / 2);
-    
+
                 newTiles.push({
                     id: cardIndex,
                     type: shuffledCards[cardIndex],
@@ -219,12 +228,31 @@ const YangGame = () => {
                     col,
                     blocked: false
                 });
-    
+
                 cardIndex++;
                 placedCards++;
             }
         }
-    
+
+        // 最终检查确保所有类型的卡片数量都是3的倍数
+        const cardCounts = {};
+        newTiles.forEach(tile => {
+            cardCounts[tile.type] = (cardCounts[tile.type] || 0) + 1;
+        });
+
+        // 如果有不是3的倍数的类型，移除多余的卡片
+        Object.entries(cardCounts).forEach(([type, count]) => {
+            if (count % 3 !== 0) {
+                const excess = count % 3;
+                for (let i = 0; i < excess; i++) {
+                    const index = newTiles.findIndex(tile => tile.type === type);
+                    if (index !== -1) {
+                        newTiles.splice(index, 1);
+                    }
+                }
+            }
+        });
+
         const tilesWithBlocking = calculateBlocking(newTiles);
         setTiles(tilesWithBlocking);
         setSelectedTiles([]);
