@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PageTransition from '../../components/PageTransition';
 
 // 卡片类型定义
-const CARD_TYPES = ['🐑', '🐮', '🐷', '🐰', '🐶', '🐱', '🤡', '🐔', '🐭']
-const CARDS_PER_TYPE = 30;
+const CARD_TYPES = ['🐑', '🐮', '🐷', '🐰', '🐶', '🐱', '🤡'];
 const MAX_STORAGE = 7;
 const LAYERS = 5; // 总层数
 
@@ -16,10 +15,11 @@ const YangGame = () => {
     const [tiles, setTiles] = useState([]); // 场上的卡片
     const [selectedTiles, setSelectedTiles] = useState([]); // 暂存区卡片
     const [gameStatus, setGameStatus] = useState('playing'); // 'playing', 'won', 'lost'
-    const [remainingCards, setRemainingCards] = useState(CARDS_PER_TYPE * CARD_TYPES.length);
+    const [remainingCards, setRemainingCards] = useState(0);
     const [showMessage, setShowMessage] = useState({ text: '', type: '' });
-    const [isProcessing, setIsProcessing] = useState(false); // 添加点击锁状态
+    const [isProcessing, setIsProcessing] = useState(false);
 
+    // 计算网格尺寸
     const calculateGridSize = useCallback(() => {
         // 考虑到卡片横向和纵向都占用2格，以及需要留出边距
         const gridWidth = Math.floor((GAME_WIDTH - CARD_SIZE) / (CARD_SIZE / 2));
@@ -62,23 +62,31 @@ const YangGame = () => {
 
     // 计算卡片遮挡关系
     const calculateBlocking = useCallback((currentTiles) => {
-        // 按layer从高到低排序
-        const sortedTiles = [...currentTiles].sort((a, b) => b.layer - a.layer);
+        // 按层级管理卡片
+        const layersMap = {};
+        currentTiles.forEach(tile => {
+            if (!layersMap[tile.layer]) layersMap[tile.layer] = [];
+            layersMap[tile.layer].push(tile);
+        });
 
-        // 创建新的卡片数组，避免直接修改状态
-        const updatedTiles = sortedTiles.map(tile => ({ ...tile, blocked: false }));
+        const updatedTiles = currentTiles.map(tile => ({ ...tile, blocked: false }));
 
-        // 检查每张卡片是否被上层卡片遮挡
-        for (let i = 0; i < updatedTiles.length; i++) {
-            const currentTile = updatedTiles[i];
-            for (let j = 0; j < updatedTiles.length; j++) {
-                if (updatedTiles[j].layer <= currentTile.layer) continue; // 只检查更高层的卡片
-                if (isOverlapping(currentTile, updatedTiles[j])) {
-                    updatedTiles[i].blocked = true;
-                    break;
+        updatedTiles.forEach(tile => {
+            for (let higherLayer = tile.layer + 1; higherLayer <= LAYERS; higherLayer++) {
+                if (layersMap[higherLayer]) {
+                    // 仅检查可能遮挡的卡片
+                    for (let otherTile of layersMap[higherLayer]) {
+                        if (Math.abs(tile.x - otherTile.x) <= CARD_SIZE && Math.abs(tile.y - otherTile.y) <= CARD_SIZE) {
+                            if (isOverlapping(tile, otherTile)) {
+                                tile.blocked = true;
+                                break;
+                            }
+                        }
+                    }
                 }
+                if (tile.blocked) break;
             }
-        }
+        });
 
         return updatedTiles;
     }, [isOverlapping]);
@@ -88,27 +96,59 @@ const YangGame = () => {
         checkMatch(newSelectedTiles);
     }, [checkMatch]);
 
-    // 处理卡片点击
-    const handleTileClick = useCallback((clickedTile) => {
-        if (gameStatus !== 'playing' || clickedTile.blocked || isProcessing) return;
-        setIsProcessing(true); // 开始处理时锁定
-
-        if (selectedTiles.length >= MAX_STORAGE) {
-            setGameStatus('lost');
-            showNotification('暂存区已满，游戏结束！', 'error');
-            setIsProcessing(false); // 解除锁定
+    // 检查游戏状态
+    const checkGameStatus = useCallback(() => {
+        if (tiles.length === 0 && selectedTiles.length === 0) {
+            setGameStatus('won');
+            showNotification('恭喜通关！', 'success');
             return;
         }
 
-        // 先将卡片设置为透明并缩小
-        const tileElement = document.getElementById(`tile-${clickedTile.id}`);
-        if (tileElement) {
-            tileElement.style.opacity = '0';
-            tileElement.style.transform = 'scale(0.8)';
+        const unblockedTiles = tiles.filter(tile => !tile.blocked);
+        if (unblockedTiles.length === 0) {
+            // 检查暂存区是否可能继续消除
+            const tileTypes = {};
+            selectedTiles.forEach(tile => {
+                tileTypes[tile.type] = (tileTypes[tile.type] || 0) + 1;
+            });
+            // 如果暂存区无法再组成三消，游戏失败
+            const canMatch = Object.values(tileTypes).some(count => count >= 3);
+            if (!canMatch) {
+                setGameStatus('lost');
+                showNotification('无可消除的卡片，游戏结束！', 'error');
+            }
+        }
+    }, [tiles, selectedTiles, showNotification]);
+
+    // 处理卡片点击
+    const handleTileClick = useCallback(async (clickedTile) => {
+        // 检查点击是否应该被处理
+        if (gameStatus !== 'playing' || clickedTile.blocked || isProcessing) {
+            console.log('Click blocked:', {
+                gameStatus,
+                isBlocked: clickedTile.blocked,
+                isProcessing
+            });
+            return;
         }
 
-        // 延迟更新状态，等待动画完成
-        setTimeout(() => {
+        setIsProcessing(true);
+
+        try {
+            if (selectedTiles.length >= MAX_STORAGE) {
+                setGameStatus('lost');
+                showNotification('暂存区已满，游戏结束！', 'error');
+                return;
+            }
+
+            const tileElement = document.getElementById(`tile-${clickedTile.id}`);
+            if (tileElement) {
+                tileElement.style.opacity = '0';
+                tileElement.style.transform = 'scale(0.8)';
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+
             setTiles(prevTiles => {
                 const newTiles = prevTiles.filter(tile => tile.id !== clickedTile.id);
                 return calculateBlocking(newTiles);
@@ -120,20 +160,22 @@ const YangGame = () => {
                 return newSelectedTiles;
             });
 
-            setRemainingCards(prev => {
-                const newCount = prev - 1;
-                // 检查游戏胜利条件
-                if (tiles.length === 0 && selectedTiles.length === 0) {
-                    setGameStatus('won');
-                    showNotification('恭喜通关！', 'success');
-                }
-                return Math.max(0, newCount); // 确保不会出现负数
-            });
-
-            setIsProcessing(false); // 完成处理后解除锁定
-        }, 300);
-
-    }, [tiles, selectedTiles, gameStatus, calculateBlocking, handleMatchCheck, showNotification, isProcessing]);
+            setRemainingCards(prev => Math.max(0, prev - 1));
+            checkGameStatus();
+        } catch (error) {
+            console.error('Error handling tile click:', error);
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [
+        gameStatus,
+        isProcessing,
+        selectedTiles.length,
+        calculateBlocking,
+        handleMatchCheck,
+        checkGameStatus,
+        showNotification
+    ]);
 
     // 初始化游戏
     const initGame = useCallback(() => {
@@ -145,11 +187,13 @@ const YangGame = () => {
         const totalPossibleCards = maxCardsPerLayer * LAYERS;
 
         // 确保每种卡片的数量是3的倍数
-        const cardCountPerType = Math.floor(totalPossibleCards / CARD_TYPES.length / 3) * 3;
+        const totalCards = Math.floor(totalPossibleCards / 3) * 3;
+        const cardsPerType = Math.floor(totalCards / CARD_TYPES.length / 3) * 3;
 
+        // 生成卡片池
         const allCards = [];
         CARD_TYPES.forEach(type => {
-            for (let i = 0; i < CARDS_PER_TYPE; i++) {
+            for (let i = 0; i < cardsPerType; i++) {
                 allCards.push(type);
             }
         });
@@ -199,13 +243,9 @@ const YangGame = () => {
         for (let layer = 0; layer < LAYERS; layer++) {
             const grid = createEmptyGrid();
             const isOddLayer = layer % 2 === 1;
-            const cardsPerLayer = Math.min(maxCardsPerLayer, Math.floor(shuffledCards.length / LAYERS));
             let placedCards = 0;
 
-            // 调整每层的卡片数量，确保总数是3的倍数
-            const targetCardsForLayer = Math.floor(cardsPerLayer / 3) * 3;
-
-            while (placedCards < targetCardsForLayer && cardIndex < shuffledCards.length) {
+            while (cardIndex < shuffledCards.length) {
                 const position = getRandomAvailablePosition(grid, isOddLayer);
                 if (!position) break;
 
@@ -270,6 +310,13 @@ const YangGame = () => {
         initGame();
     }, [initGame]);
 
+    // 每次状态更新后检查游戏状态
+    useEffect(() => {
+        if (!isProcessing) {
+            checkGameStatus();
+        }
+    }, [tiles, selectedTiles, isProcessing, checkGameStatus]);
+
     return (
         <PageTransition>
             <div className="flex flex-col items-center min-h-screen bg-white">
@@ -327,10 +374,9 @@ const YangGame = () => {
                                     <div
                                         id={`tile-${tile.id}`}
                                         key={tile.id}
-                                        className={`absolute flex items-center justify-center bg-white border-2 rounded-sm
-                                            transition-all duration-300 ease-out transform ${tile.blocked
-                                                ? 'border-gray-300 bg-gray-100 opacity-60 scale-95 cursor-not-allowed'
-                                                : 'border-blue-400 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:border-blue-500 active:translate-y-0 active:scale-100 active:shadow-md cursor-pointer'
+                                        className={`absolute flex items-center justify-center bg-white border-2 rounded-sm transition-all duration-300 ease-out transform cursor-pointer ${tile.blocked
+                                                ? 'border-gray-300 bg-gray-100 opacity-60 scale-95 pointer-events-none'
+                                                : 'border-blue-400 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:border-blue-500 active:translate-y-0 active:scale-100 active:shadow-md'
                                             }`}
                                         style={{
                                             left: `${(tile.x / 800) * 100}%`,
@@ -338,17 +384,12 @@ const YangGame = () => {
                                             width: `${(tile.width / 800) * 100}%`,
                                             height: `${(tile.height / 600) * 100}%`,
                                             zIndex: tile.layer + 1,
-                                            pointerEvents: isProcessing ? 'none' : 'auto', // 处理中禁用点击
+                                            pointerEvents: isProcessing ? 'none' : 'auto',
                                             boxShadow: tile.blocked ? 'none' : '0 4px 6px rgba(0, 0, 0, 0.1)',
-                                            opacity: 1,
-                                            transform: 'scale(1)',
-                                            transition: 'all 0.3s ease-out',
                                         }}
-                                        onClick={() => !isProcessing && handleTileClick(tile)}
+                                        onClick={() => handleTileClick(tile)}
                                     >
-                                        <span className="text-2xl sm:text-3xl select-none 
-                                            transition-transform duration-200 
-                                            hover:scale-110 active:scale-90">
+                                        <span className="text-2xl sm:text-3xl select-none">
                                             {tile.type}
                                         </span>
                                     </div>
@@ -359,7 +400,7 @@ const YangGame = () => {
                         {/* 暂存区 */}
                         <div className="w-full sm:w-[800px] flex justify-center gap-3 p-4 sm:p-5 bg-white bg-opacity-90 
                             backdrop-blur-md rounded-xl shadow-lg min-h-[70px] sm:min-h-[90px]">
-                            {selectedTiles.map((tile, index) => (
+                            {selectedTiles.map((tile) => (
                                 <div
                                     key={`storage-${tile.id}`}
                                     className="flex items-center justify-center w-[45px] h-[45px] sm:w-[65px] sm:h-[65px] 
